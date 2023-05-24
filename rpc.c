@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <stdio.h>
 #define MAX_NUM 100
 
 
@@ -56,7 +57,7 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
     if (srv == NULL || name == NULL || handler == NULL){
         return -1;
     }
-    rpc_handler* cur;
+    rpc_handler cur;
     char function_names[50];
     if (strcmp(name, "add2") == 0) {
         cur = add2_i8;
