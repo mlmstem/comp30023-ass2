@@ -6,14 +6,13 @@ OBJECTS = rpc.o
 
 .PHONY: format all
 
-$(RPC_SYSTEM): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(RPC_SYSTEM)
+all: $(OBJECTS)
 
-$(OBJECTS): rpc.c rpc.h
-	$(CC) $(CFLAGS) -c rpc.c -o $(OBJECTS)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(RPC_SYSTEM) $(OBJECTS)
+	rm -f $(OBJECTS)
 
 format:
 	clang-format -style=file -i *.c *.h
