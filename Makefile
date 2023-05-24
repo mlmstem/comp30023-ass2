@@ -11,7 +11,7 @@ $(RPC_SYSTEM): rpc.c rpc.h
 #	ar rcs $(RPC_SYSTEM_A) 
 
 clean:
-	rm -f rpc.o $(RPC_SYSTEM)
+	rm -f $(RPC_SYSTEM)
 
 format:
 	clang-format -style=file -i *.c *.h
