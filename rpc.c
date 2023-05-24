@@ -4,13 +4,14 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #define MAX_NUM 100
 
 
 int create_listening_socket(char* service);
-rpc_data* echo_2h(rpc_data* x);
-rpc_data* sleep_h(rpc_data*x);
-rpc_data* add2_2h(rpc_data*x);
+rpc_data* echo_2(rpc_data* x);
+rpc_data* sleep_(rpc_data*x);
+rpc_data* add2_2(rpc_data*x);
 rpc_data* bad_null(rpc_data*x);
 rpc_data* bad_data2_2(rpc_data*x);
 rpc_data* bad_data2_1(rpc_data*x);
@@ -29,7 +30,6 @@ struct rpc_server {
     int cur_client;
     int sockfd;
     struct addrinfo hints, *res;
-    struct server_addr;
     FunctionMap* map;
     int number_handlers;
 };
