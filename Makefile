@@ -1,13 +1,13 @@
 CC=gcc
 RPC_SYSTEM=rpc.o
-CFLANGS = -Wall -g
+CFLANGS = -Wall
 
 .PHONY: format all
 
 all: $(RPC_SYSTEM)
 
 $(RPC_SYSTEM): rpc.c rpc.h
-	$(CC) $(CFLANGS) -o $@ $<
+	$(CC) $(CFLANGS) -o -g $(RPC_SYSTEM)$@ $<
 
 RPC_SYSTEM_A=rpc.a
 $(RPC_SYSTEM_A): rpc.o
