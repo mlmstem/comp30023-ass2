@@ -6,12 +6,15 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
+#include <pthread.h>
 #define MAX_NUM 100
 
 
 int create_listening_socket(char* service);
+void handle_client_request(void* ptr);
 rpc_data* echo_2(rpc_data* x);
-rpc_data* sleep_(rpc_data*x);
+rpc_data* sleep(rpc_data*x);
 rpc_data* add2_2(rpc_data*x);
 rpc_data* bad_null(rpc_data*x);
 rpc_data* bad_data2_2(rpc_data*x);
@@ -58,7 +61,6 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
         return -1;
     }
     rpc_handler cur;
-    char function_names[50];
     if (strcmp(name, "add2") == 0) {
         cur = add2_i8;
         
@@ -137,7 +139,7 @@ This function will not usually return. It should only return if srv is NULL or y
 
 
     if (srv == NULL) {
-        return NULL;
+        return;
     }
 
     srv->sockfd = create_listening_socket("service");
@@ -150,11 +152,10 @@ This function will not usually return. It should only return if srv is NULL or y
 
     if (listen(srv->sockfd, 10) < 0) {
         perror("Error listening ");
-        return NULL;
+        return;
     }
 
     while (1) {
-        rpc_client* new_client = malloc(sizeof(rpc_client));
         
         srv->cur_client = accept(srv->sockfd, (struct sockaddr*)&client_addr, &client_len);
         if (srv->cur_client< 0) {
@@ -211,7 +212,7 @@ void handle_client_request(void* ptr){
 
     if(strcmp(request, "rpc_find") == 0){
 
-        if (write(srv->cur_client,srv->number_handlers,sizeof(srv->number_handlers)) < 0){
+        if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
             perror("Error writing from socket");
             return;
         }
@@ -224,7 +225,7 @@ void handle_client_request(void* ptr){
 
      if(strcmp(request, "rpc_call") == 0){
 
-        if (write(srv->cur_client,srv->number_handlers,sizeof(srv->number_handlers)) < 0){
+        if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
             perror("Error writing from socket");
             return;
         }
@@ -246,7 +247,7 @@ void handle_client_request(void* ptr){
 
         if(args2 != NULL){
             args2->data2 = (char*)args2->data2;
-            printf("%s : arguments %d and %d\n", args2->data2, args->data1, *(int*)args->data2);
+            printf("%s : arguments %d and %d\n", (char*)args2->data2, args->data1, *(int*)args->data2);
         }else{
             printf("null: called");
         }
@@ -262,7 +263,8 @@ rpc_data* echo_2(rpc_data* x){
     printf("calling echo2  data1 = %d and data2 sha256 = %p: \n", x->data1, (x->data2));
     printf("call of echo2 received data1 = %d, call of echo2 received data1 = %p \n",x->data1, (x->data2));
 
-    x->data2 = __func__;
+    const char* funcName = __func__;
+    x->data2 = (void*)funcName;
 
     return x;
 }
@@ -270,7 +272,8 @@ rpc_data* sleep(rpc_data*x){
     printf("calling sleep, with argument %d\n", x->data1);
     printf("call of sleep received result %d\n", x->data1);
 
-    x->data2 = __func__;
+    const char* funcName = __func__;
+    x->data2 = (void*)funcName;
 
     return x;
 }
@@ -287,7 +290,8 @@ rpc_data* add2_2(rpc_data* x){
     assert(out != NULL);
     out->data1 = res;
     out->data2_len = 0;
-    out->data2 = __func__;
+    const char* funcName = __func__;
+    out->data2 = (void*)funcName;
     return out;
 }
 
@@ -313,7 +317,8 @@ rpc_data* bad_data2_1(rpc_data*x){
 
     printf("call of bad_data2_1 failed");
     
-    x->data2 = __func__;
+    const char* funcName = __func__;
+    x->data2 = (void*)funcName;
     return x;
 
 }
@@ -326,7 +331,8 @@ rpc_data* bad_data2_2(rpc_data*x){
 
     printf("call of bad_data2_2 failed");
 
-    x->data2 = __func__;
+    const char* funcName = __func__;
+    x->data2 = (void*)funcName;
     
     return x;
 
