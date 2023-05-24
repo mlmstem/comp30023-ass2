@@ -19,4 +19,4 @@ format:
 	clang-format -style=file -i *.c *.h
 
 clean:
-        rm *.o all
+    rm *.o all
