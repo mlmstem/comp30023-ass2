@@ -4,9 +4,6 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #define MAX_NUM 100
 
 
