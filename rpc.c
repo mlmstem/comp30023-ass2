@@ -214,12 +214,12 @@ void* handle_client_request(void* ptr){
 
         if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
             perror("Error writing from socket");
-            return;
+            exit(EXIT_FAILURE);
         }
 
         if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
             perror("Error writting from socket");
-            return;
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -227,12 +227,12 @@ void* handle_client_request(void* ptr){
 
         if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
             perror("Error writing from socket");
-            return;
+            exit(EXIT_FAILURE);
         }
 
         if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
             perror("Error writting from socket");
-            return;
+            exit(EXIT_FAILURE);
         }
         rpc_data* args;
         rpc_data* args2;
