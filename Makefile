@@ -1,17 +1,19 @@
-CC=gcc
-CFLANGS = -Wall
+CC = gcc
+CFLAGS = -Wall
+RPC_SYSTEM = rpc
+
+OBJECTS = rpc.o
 
 .PHONY: format all
 
-$(RPC_SYSTEM): rpc.c rpc.h
-	$(CC) $(CFLANGS) rpc.c -o $(RPC_SYSTEM) 
+$(RPC_SYSTEM): $(OBJECTS)
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(RPC_SYSTEM)
 
-#RPC_SYSTEM_A=rpc.a
-#$(RPC_SYSTEM_A): rpc.o
-#	ar rcs $(RPC_SYSTEM_A) 
+$(OBJECTS): rpc.c rpc.h
+	$(CC) $(CFLAGS) -c rpc.c -o $(OBJECTS)
 
 clean:
-	rm -f $(RPC_SYSTEM)
+	rm -f $(RPC_SYSTEM) $(OBJECTS)
 
 format:
 	clang-format -style=file -i *.c *.h
