@@ -12,7 +12,7 @@
 
 
 int create_listening_socket(char* service);
-void handle_client_request(void* ptr);
+void* handle_client_request(void* ptr);
 rpc_data* echo_2(rpc_data* x);
 rpc_data* sleep_h(rpc_data*x);
 rpc_data* add2_2(rpc_data*x);
@@ -198,7 +198,7 @@ This function will not usually return. It should only return if srv is NULL or y
         //free(response);
 }
 
-void handle_client_request(void* ptr){
+void* handle_client_request(void* ptr){
 
     rpc_server* srv = (rpc_server*)ptr;
 
@@ -251,9 +251,10 @@ void handle_client_request(void* ptr){
         }else{
             printf("null: called");
         }
-  
+
     
 }
+    pthread_exit(NULL);
 }
 
 
