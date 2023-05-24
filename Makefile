@@ -1,10 +1,7 @@
 CC=gcc
 CFLANGS = -Wall
 
-
 .PHONY: format all
-
-all: $(RPC_SYSTEM)
 
 $(RPC_SYSTEM): rpc.c rpc.h
 	$(CC) $(CFLANGS) rpc.c -o $(RPC_SYSTEM) 

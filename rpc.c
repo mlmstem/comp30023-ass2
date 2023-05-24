@@ -14,7 +14,7 @@
 int create_listening_socket(char* service);
 void handle_client_request(void* ptr);
 rpc_data* echo_2(rpc_data* x);
-rpc_data* sleep(rpc_data*x);
+rpc_data* sleep_h(rpc_data*x);
 rpc_data* add2_2(rpc_data*x);
 rpc_data* bad_null(rpc_data*x);
 rpc_data* bad_data2_2(rpc_data*x);
@@ -80,7 +80,7 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
         cur = bad_data2_1;
         
     }else if (strcmp(name, "sleep") == 0) {
-        cur = sleep;
+        cur = sleep_h;
         
     }
     
@@ -171,7 +171,7 @@ This function will not usually return. It should only return if srv is NULL or y
         }*/
         pthread_t client_thread;
 
-        if (pthread_create(&client_thread, NULL, &handle_client_request, (void*)srv) < 0){
+        if (pthread_create(&client_thread, NULL, handle_client_request, (void*)srv) < 0){
             perror("error creating thread");
             close(srv->cur_client);
             exit(EXIT_FAILURE);
@@ -268,11 +268,11 @@ rpc_data* echo_2(rpc_data* x){
 
     return x;
 }
-rpc_data* sleep(rpc_data*x){
+rpc_data* sleep_h(rpc_data*x){
     printf("calling sleep, with argument %d\n", x->data1);
     printf("call of sleep received result %d\n", x->data1);
 
-    const char* funcName = __func__;
+    const char* funcName = "sleep";
     x->data2 = (void*)funcName;
 
     return x;
@@ -439,7 +439,7 @@ rpc_data *rpc_call(rpc_client *cl, rpc_handle *h, rpc_data *payload) {
 If the call fails, it returns NULL. NULL should be returned if any of the arguments are NULL. If this returns a
 non-NULL value, then it should dynamically allocate (by malloc) both the rpc_data structure and its data2
 field. The client will free these by rpc_data_free (defined below).*/
-    if(payload == NULL || payload->data1 == NULL || payload->data2 == NULL){
+    if(payload == NULL || h == NULL || cl == NULL){
         return NULL;
     }
 
