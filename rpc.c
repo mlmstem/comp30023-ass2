@@ -171,7 +171,7 @@ This function will not usually return. It should only return if srv is NULL or y
         }*/
         pthread_t client_thread;
 
-        if (pthread_create(client_thread, NULL, handle_client_request, (void*)srv) < 0){
+        if (pthread_create(&client_thread, NULL, &handle_client_request, (void*)srv) < 0){
             perror("error creating thread");
             close(srv->cur_client);
             exit(EXIT_FAILURE);

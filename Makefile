@@ -7,7 +7,7 @@ CFLANGS = -Wall -g
 all: $(RPC_SYSTEM)
 
 $(RPC_SYSTEM): rpc.c rpc.h
-	$(CC) $(CFLANGS) -c -o $@ $<
+	$(CC) $(CFLANGS) -o $@ $<
 
 RPC_SYSTEM_A=rpc.a
 $(RPC_SYSTEM_A): rpc.o
@@ -17,3 +17,6 @@ $(RPC_SYSTEM_A): rpc.o
 
 format:
 	clang-format -style=file -i *.c *.h
+
+clean:
+        rm *.o all
