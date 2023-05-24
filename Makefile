@@ -8,7 +8,7 @@ $(RPC_SYSTEM): rpc.c rpc.h
 
 RPC_SYSTEM_A=rpc.a
 $(RPC_SYSTEM_A): rpc.o
-	ar rcs $(RPC_SYSTEM_A) 
+	ar -d rcs $(RPC_SYSTEM_A) 
 
 clean:
 	rm -f rpc.o
