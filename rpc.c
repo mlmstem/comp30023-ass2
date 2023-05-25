@@ -41,7 +41,7 @@ struct rpc_server {
 rpc_server *rpc_init_server(int port) {
 /*Called before rpc_register. Use this for whatever you need. It should return a pointer to a struct (that you
 define) containing server state information on success and NULL on failure.*/
-
+fprintf(stdout,"rpc_init_server: instance 0, port %d\n", port);
 rpc_server * new_server = (rpc_server*)malloc(sizeof(rpc_server));
 if (new_server != NULL){
     new_server->server_state = 1;
@@ -56,6 +56,8 @@ int rpc_register(rpc_server *srv, char *name, rpc_handler handler) {
 /*At the server, let the subsystem know what function to call when an incoming request is received.
 It should return a non-negative number on success (possibly an ID for this handler, but a constant is fine), and -1
 on failure. If any of the arguments is NULL then -1 should be returned.*/
+    
+    fprintf(stdout, "rpc_register: instance 0, %s (handler) as %s\n", name, name);
 
     if (srv == NULL || name == NULL || handler == NULL){
         return -1;
@@ -144,6 +146,8 @@ This function will not usually return. It should only return if srv is NULL or y
     /*Make sure the service name is passed in correctly so getaddressinfo not
     causing error*/
 
+    fprintf(stdout, "rpc_serve_all: instance 0\n");
+
     char service[20];
     sprintf(service, "%d", srv->port);
 
@@ -162,6 +166,8 @@ This function will not usually return. It should only return if srv is NULL or y
 
     while (1) {
         
+        // need debug from this line
+        /* this will require a client to connect to server to enable the connection */
         srv->cur_client = accept(srv->sockfd, (struct sockaddr*)&client_addr, &client_len);
         if (srv->cur_client< 0) {
             perror("Error accepting connection");
