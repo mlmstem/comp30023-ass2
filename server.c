@@ -7,11 +7,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <rpc.c>
 
 rpc_data *add2_i8(rpc_data *);
 
-int create_listening_socket(char* service);
+//int create_listening_socket(char* service);
 
 int main(int argc, char *argv[]) {
     int sockfd, clientsockfd, n, port;
@@ -19,7 +18,7 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
     rpc_server* state;
-
+    /*
     int sockfd = create_listening_socket("service");
 
     if (listen(sockfd, 10) < 0) {
@@ -32,40 +31,28 @@ int main(int argc, char *argv[]) {
         perror("connection");
         exit(EXIT_FAILURE);
     }
-    while (1){
+    */
+    while (fgets(buffer, sizeof(buffer),stdin)!= NULL){
         char buffer[256];
-        if (read(clientsockfd, buffer, sizeof(buffer) < 0)){
-            perror("ERROR reading");
-            exit(EXIT_FAILURE);
-        }
+        buffer[strcspn(buffer, "\n")] = '\0';
         // check the first command 
-        if (strcmp(buffer, "init") == 0){
+        if (strncmp(buffer, "init",4) == 0){
             int port;
-            if (read(clientsockfd,&port, sizeof(port) < 0)){
-                perror("Error readinig port ");
+            sscanf(buffer + 5, "%d", &port);
+            state = rpc_init_server(port);
+            if (state == NULL){
+                printf("failed to init");
                 exit(EXIT_FAILURE);
-            }
-        state = rpc_init_server(port);
-        if (state == NULL){
-            printf("failed to init");
-            exit(EXIT_FAILURE);
         }
 
-        state->sockfd = sockfd;
+        //state->sockfd = sockfd;
+        rpc_handler new;
 
         }else if (strcmp(buffer, "register")==0){
             char name[256];
-            if (read(clientsockfd,name, sizeof(name)) < 0){
-                perror("ERROR READING");
-                exit(EXIT_FAILURE);
-            }
-            rpc_handler handler;
-            if (read(clientsockfd, &handler, sizeof(handler) < 0)){
-                perror("Error READING handler");
-                exit(EXIT_FAILURE);
-
-            }
-            if (rpc_register(state, name, handler) == -1){
+            char handler[256];
+            sscanf(buffer + 9, "%s %s", name, handler);
+            if (rpc_register(state, name, add2_i8) == -1){
                 printf("FAILED register");
                 exit(EXIT_FAILURE);
             }
@@ -92,28 +79,30 @@ int main(int argc, char *argv[]) {
 
     rpc_serve_all(state);
     */
-close(sockfd);
-close(clientsockfd);
+//close(sockfd);
+//close(clientsockfd);
 }
 
 /* Adds 2 signed 8 bit numbers */
 /* Uses data1 for left operand, data2 for right operand */
+
+/*
 rpc_data *add2_i8(rpc_data *in) {
-    /* Check data2 */
+    // Check data2 
     if (in->data2 == NULL || in->data2_len != 1) {
         return NULL;
     }
 
-    /* Parse request */
+    //Parse request 
     char n1 = in->data1;
     char n2 = ((char *)in->data2)[0];
 
-    /* Perform calculation */
+    //Perform calculation 
     printf("add2: arguments %d and %d\n", n1, n2);
     int res = n1 + n2;
 
     
-    /* Prepare response */
+    // Prepare response 
     rpc_data *out = malloc(sizeof(rpc_data));
     assert(out != NULL);
     out->data1 = res;
@@ -122,10 +111,11 @@ rpc_data *add2_i8(rpc_data *in) {
 
     return out;
 }
+*/
 
 
 /* COPIED FROM PRACTICAL server.c  used to create listening socket*/
-
+/*
 int create_listening_socket(char* service) {
 	int re, s, sockfd;
 	struct addrinfo hints, *res;
@@ -162,7 +152,7 @@ int create_listening_socket(char* service) {
 	freeaddrinfo(res);
 
 	return sockfd;
-}
+}*/
 
 
 

@@ -141,8 +141,13 @@ This function will not usually return. It should only return if srv is NULL or y
     if (srv == NULL) {
         return;
     }
+    /*Make sure the service name is passed in correctly so getaddressinfo not
+    causing error*/
 
-    srv->sockfd = create_listening_socket("service");
+    char service[20];
+    sprintf(service, "%d", srv->port);
+
+    srv->sockfd = create_listening_socket(service);
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
     
@@ -177,20 +182,6 @@ This function will not usually return. It should only return if srv is NULL or y
             exit(EXIT_FAILURE);
         }
 
-
-        
-
-        /**
-        rpc_data* handled_response;
-        for (int i = 0; i < srv->number_handlers; i++){
-            rpc_handler cur_handler = srv->handlers[i];
-            handled_response = cur_handler(response);
-            if (write(client_sockfd, handled_response, sizeof(rpc_data)) < 0) {
-                perror("Error writing to socket");
-                return;
-        }
-        }
-        */
 
         close(srv->cur_client);
 
