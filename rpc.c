@@ -396,7 +396,7 @@ text-based IP address and numeric port number passed in on the command line.
 The function should return a non-NULL pointer to a struct (that you define) containing client state information on
 success and NULL on failure.*/
 
-    fprintf(stdout, "rpc_init_client: instance 0, addr %s, port %d", addr, port);
+    fprintf(stdout, "rpc_init_client: instance 0, addr %s, port %d \n", addr, port);
     rpc_client* new_cl = (rpc_client*)malloc(sizeof(rpc_client));
 
     strcpy(new_cl->addr, addr);
