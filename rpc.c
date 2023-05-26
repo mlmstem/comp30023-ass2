@@ -216,7 +216,7 @@ void* handle_client_request(void* ptr){
                 exit(EXIT_FAILURE);
             }
 
-            if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
+            if (write(srv->cur_client, srv->map, sizeof(FunctionMap)* srv->number_handlers) < 0) {
                 perror("Error writting from socket");
                 exit(EXIT_FAILURE);
             }
@@ -229,7 +229,7 @@ void* handle_client_request(void* ptr){
                 exit(EXIT_FAILURE);
             }
 
-            if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
+            if (write(srv->cur_client, srv->map, sizeof(FunctionMap)* srv->number_handlers) < 0) {
                 perror("Error writting from socket");
                 exit(EXIT_FAILURE);
             }
@@ -396,6 +396,7 @@ text-based IP address and numeric port number passed in on the command line.
 The function should return a non-NULL pointer to a struct (that you define) containing client state information on
 success and NULL on failure.*/
 
+    fprintf(stdout, "rpc_init_client: instance 0, addr %s, port %d", addr, port);
     rpc_client* new_cl = (rpc_client*)malloc(sizeof(rpc_client));
 
     strcpy(new_cl->addr, addr);
@@ -440,7 +441,7 @@ the find operation fails, it returns NULL*/
         exit(EXIT_FAILURE);
     }
 
-
+    fprintf(stdout, "rpc_find: instance 0, %s\n", name);
     int register_num;
     FunctionMap* map_r;
 
@@ -456,17 +457,21 @@ the find operation fails, it returns NULL*/
     }
     map_r = (FunctionMap*)malloc(sizeof(FunctionMap) * register_num);
 
-    if(read(cl->sockfd, &map_r,sizeof(map_r)) < 0){
+    if(read(cl->sockfd, map_r,sizeof(FunctionMap) * register_num) < 0){
         perror("Eorror reading");
         exit(EXIT_FAILURE);
     }
 
     for (int i = 0; i < register_num; i++){
+        // segmentation faults
         if(strcmp(map_r[i].name, name) == 0){
+            fprintf(stdout, "rpc_find: instance 0, returned handle for function %s\n", name);
             strcpy(handle1->name, name);
             return handle1; 
         }
     }
+
+    fprintf(stdout, "rpc_find: instance 0, wasn't able to find function %s\n", name);
 
 
     return NULL;
@@ -492,6 +497,19 @@ field. The client will free these by rpc_data_free (defined below).*/
         exit(EXIT_FAILURE);
     }
 
+    /* print the initial output*/
+
+    if (payload->data2_len == 0){
+        fprintf(stdout, "calling %s, with arguments %d...\n", h->name, payload->data1);
+    }else{
+        fprintf(stdout, "calling %s, with arguments ", h->name);
+        int * array1 = (int*)payload->data2;
+        for(int i = 0; i < payload->data2_len; i++){
+            fprintf(stdout,"%d ",array1[i]);
+        }
+        fprintf(stdout,"...\n");
+    }
+
 
     int register_num;
     FunctionMap* map_r;
@@ -505,10 +523,11 @@ field. The client will free these by rpc_data_free (defined below).*/
     }
     map_r = (FunctionMap*)malloc(sizeof(FunctionMap) * register_num);
 
-    if(read(cl->sockfd, &map_r,sizeof(map_r)) < 0){
-        perror("Eorror reading");
+    if (read(cl->sockfd, map_r, sizeof(FunctionMap) * register_num) < 0) {
+        perror("Error reading from socket");
         exit(EXIT_FAILURE);
-    }
+}
+
 
     if(write(cl->sockfd, payload,sizeof(payload)) < 0){
         perror("Eorror reading");
@@ -519,6 +538,20 @@ field. The client will free these by rpc_data_free (defined below).*/
         if (strcmp(map_r[i].name, h->name) == 0){
             handler_call = map_r[i].handler;
             rpc_data* result = handler_call(payload);
+
+            // prints the result
+            if (result->data2_len == 0){
+                fprintf(stdout, "calling %s, with arguments %d...\n", h->name, result->data1);
+            }else{
+                fprintf(stdout, "calling %s, with arguments ", h->name);
+                int * array1 = (int*)result->data2;
+            for(int i = 0; i < result->data2_len; i++){
+                fprintf(stdout,"%d ",array1[i]);
+            }
+                fprintf(stdout,"...\n");
+            }
+
+
             if(write(cl->sockfd,result->data2,sizeof(result->data2))<0){
                 perror("Eorror reading");
                 exit(EXIT_FAILURE);

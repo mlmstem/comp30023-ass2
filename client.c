@@ -39,12 +39,13 @@ int main(int argc, char *argv[]) {
             // call find after with find request
             rpc_handle *next = rpc_find(state, function_name);
 
-
+            /*
             if (next == NULL) {
                 fprintf(stderr, "ERROR: Function add2 does not exist\n");
                 exit_code = 1;
                 goto cleanup;
-    }
+
+    }*/
 
         }else if (strncmp(buffer, "call", 4)== 0){
 
