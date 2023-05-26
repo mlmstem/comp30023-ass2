@@ -192,9 +192,6 @@ This function will not usually return. It should only return if srv is NULL or y
             exit(EXIT_FAILURE);
         }
 
-
-        close(srv->cur_client);
-
         }
         //free(response);
 }
@@ -203,58 +200,62 @@ void* handle_client_request(void* ptr){
 
     rpc_server* srv = (rpc_server*)ptr;
 
-    char request[30];
-    if (read(srv->cur_client, request, sizeof(request)) < 0) {
-        perror("Error reading from socket");
-        close(srv->cur_client);
-        pthread_exit(NULL);
-    }
-
-
-    if(strcmp(request, "rpc_find") == 0){
-
-        if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
-            perror("Error writing from socket");
-            exit(EXIT_FAILURE);
+    while(1){
+        char request[30];
+        if (read(srv->cur_client, request, sizeof(request)) < 0) {
+            perror("Error reading from socket");
+            close(srv->cur_client);
+            pthread_exit(NULL);
         }
 
-        if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
-            perror("Error writting from socket");
-            exit(EXIT_FAILURE);
-        }
-    }
 
-     if(strcmp(request, "rpc_call") == 0){
+        if(strcmp(request, "rpc_find") == 0){
 
-        if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
-            perror("Error writing from socket");
-            exit(EXIT_FAILURE);
+            if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
+                perror("Error writing from socket");
+                exit(EXIT_FAILURE);
+            }
+
+            if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
+                perror("Error writting from socket");
+                exit(EXIT_FAILURE);
+            }
         }
 
-        if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
-            perror("Error writting from socket");
-            exit(EXIT_FAILURE);
-        }
-        rpc_data* args;
-        rpc_data* args2;
-        if(read(srv->cur_client, &args,sizeof(args)) < 0){
-            perror("Eorror reading");
-            exit(EXIT_FAILURE);
-    }
-        if(read(srv->cur_client, &args2,sizeof(args2)) < 0){
-            perror("Eorror reading");
-            exit(EXIT_FAILURE);
-    }
+        if(strcmp(request, "rpc_call") == 0){
 
-        if(args2 != NULL){
-            args2->data2 = (char*)args2->data2;
-            printf("%s : arguments %d and %d\n", (char*)args2->data2, args->data1, *(int*)args->data2);
-        }else{
-            printf("null: called");
+            if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
+                perror("Error writing from socket");
+                exit(EXIT_FAILURE);
+            }
+
+            if (write(srv->cur_client, srv->map, sizeof(srv->map)) < 0) {
+                perror("Error writting from socket");
+                exit(EXIT_FAILURE);
+            }
+            rpc_data* args;
+            rpc_data* args2;
+            if(read(srv->cur_client, &args,sizeof(args)) < 0){
+                perror("Eorror reading");
+                exit(EXIT_FAILURE);
         }
+            if(read(srv->cur_client, &args2,sizeof(args2)) < 0){
+                perror("Eorror reading");
+                exit(EXIT_FAILURE);
+        }
+
+            if(args2 != NULL){
+                args2->data2 = (char*)args2->data2;
+                printf("%s : arguments %d and %d\n", (char*)args2->data2, args->data1, *(int*)args->data2);
+            }else{
+                printf("null: called");
+            }
 
     
-}
+        }
+    }
+
+    close(srv->cur_client);
     pthread_exit(NULL);
 }
 
@@ -446,6 +447,8 @@ the find operation fails, it returns NULL*/
     rpc_handle* handle1 = (rpc_handle*)malloc(sizeof(rpc_handle));
     handle1->client = (rpc_client*)malloc(sizeof(rpc_client));
     handle1->client->sockfd = cl->sockfd;
+
+    // error happens from first read
 
     if (read(cl->sockfd, &register_num,sizeof(register_num)) < 0){
         perror("Error reading");
