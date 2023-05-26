@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     }
     */
     while (fgets(buffer, sizeof(buffer),stdin)!= NULL){
-        char buffer[256];
+        //char buffer[256];
         buffer[strcspn(buffer, "\n")] = '\0';
         // check the first command 
         if (strncmp(buffer, "init",4) == 0){
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         //state->sockfd = sockfd;
         rpc_handler new;
 
-        }else if (strcmp(buffer, "register")==0){
+        }else if (strncmp(buffer, "register",8)==0){
             char name[256];
             char handler[256];
             sscanf(buffer + 9, "%s %s", name, handler);
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
                 exit(EXIT_FAILURE);
             }
 
-        }else if (strcmp(buffer, "serve") == 0){
+        }else if (strncmp(buffer, "serve",5) == 0){
             rpc_serve_all(state);
         }
 
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 /* Adds 2 signed 8 bit numbers */
 /* Uses data1 for left operand, data2 for right operand */
 
-/*
+
 rpc_data *add2_i8(rpc_data *in) {
     // Check data2 
     if (in->data2 == NULL || in->data2_len != 1) {
@@ -107,11 +107,11 @@ rpc_data *add2_i8(rpc_data *in) {
     assert(out != NULL);
     out->data1 = res;
     out->data2_len = 0;
-    out->data2 = __func__;
+    out->data2 = NULL;
 
     return out;
 }
-*/
+
 
 
 /* COPIED FROM PRACTICAL server.c  used to create listening socket*/

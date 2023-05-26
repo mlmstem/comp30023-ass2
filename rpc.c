@@ -13,6 +13,7 @@
 
 int create_listening_socket(char* service);
 void* handle_client_request(void* ptr);
+/**
 rpc_data* echo_2(rpc_data* x);
 rpc_data* sleep_h(rpc_data*x);
 rpc_data* add2_2(rpc_data*x);
@@ -20,6 +21,7 @@ rpc_data* bad_null(rpc_data*x);
 rpc_data* bad_data2_2(rpc_data*x);
 rpc_data* bad_data2_1(rpc_data*x);
 rpc_data *add2_i8(rpc_data *);
+*/
 
 typedef struct {
     char name[30];
@@ -62,6 +64,7 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
     if (srv == NULL || name == NULL || handler == NULL){
         return -1;
     }
+    /*
     rpc_handler cur;
     if (strcmp(name, "add2") == 0) {
         cur = add2_i8;
@@ -85,6 +88,7 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
         cur = sleep_h;
         
     }
+    */
     
 
     // create the socket;
@@ -123,7 +127,7 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
       return -1;
 
     strcpy(srv->map[srv->number_handlers].name,name);
-    srv->map[srv->number_handlers].handler = cur;
+    srv->map[srv->number_handlers].handler = handler;
     srv->number_handlers++;
 
     return srv->number_handlers;
@@ -254,7 +258,7 @@ void* handle_client_request(void* ptr){
     pthread_exit(NULL);
 }
 
-
+/*
 rpc_data* echo_2(rpc_data* x){
     
 
@@ -275,7 +279,9 @@ rpc_data* sleep_h(rpc_data*x){
 
     return x;
 }
+*/
 
+/*
 rpc_data* add2_2(rpc_data* x){
     
     char n1 = x->data1;
@@ -283,7 +289,7 @@ rpc_data* add2_2(rpc_data* x){
     printf("calling add2_2, with arguments %d %d \n", n1, n2);
     int res = n1 + n2;
 
-    /* Prepare response */
+    //Prepare response 
     rpc_data *out = malloc(sizeof(rpc_data));
     assert(out != NULL);
     out->data1 = res;
@@ -292,7 +298,9 @@ rpc_data* add2_2(rpc_data* x){
     out->data2 = (void*)funcName;
     return out;
 }
+*/
 
+/*
 rpc_data* bad_null(rpc_data*x){
 
     char n1 = x->data1;
@@ -336,21 +344,20 @@ rpc_data* bad_data2_2(rpc_data*x){
 
 }
 rpc_data *add2_i8(rpc_data *in) {
-    /* Check data2 */
+
     if (in->data2 == NULL || in->data2_len != 1) {
         return NULL;
     }
 
-    /* Parse request */
     char n1 = in->data1;
     char n2 = ((char *)in->data2)[0];
 
-    /* Perform calculation */
+
     printf("add2: arguments %d and %d\n", n1, n2);
     int res = n1 + n2;
 
     
-    /* Prepare response */
+
     rpc_data *out = malloc(sizeof(rpc_data));
     assert(out != NULL);
     out->data1 = res;
@@ -359,10 +366,7 @@ rpc_data *add2_i8(rpc_data *in) {
     out->data2 = (void*)funcName;
     return out;
 }
-
-
-
-
+*/
 
 
 
@@ -418,15 +422,19 @@ success and NULL on failure.*/
     return new_cl;
 }
 
+/*this function needs debug*/
 rpc_handle *rpc_find(rpc_client *cl, char *name) {
 /*At the client, tell the subsystem what details are required to place a call. The return value is a handle (not handler)
 for the remote procedure, which is passed to the following function.
 If name is not registered, it should return NULL. If any of the arguments are NULL then NULL should be returned. If
 the find operation fails, it returns NULL*/
 
+
+// change sizeof(request) to strlen(request) to ensure the string is properly sent
+
     char request[] ="rpc_find";
 
-    if (write(cl->sockfd, request,sizeof(request)) < 0){
+    if (write(cl->sockfd, request,strlen(request) + 1) < 0){
         perror("Error reading");
         exit(EXIT_FAILURE);
     }
@@ -436,6 +444,8 @@ the find operation fails, it returns NULL*/
     FunctionMap* map_r;
 
     rpc_handle* handle1 = (rpc_handle*)malloc(sizeof(rpc_handle));
+    handle1->client = (rpc_client*)malloc(sizeof(rpc_client));
+    handle1->client->sockfd = cl->sockfd;
 
     if (read(cl->sockfd, &register_num,sizeof(register_num)) < 0){
         perror("Error reading");
@@ -474,7 +484,7 @@ field. The client will free these by rpc_data_free (defined below).*/
 
     char request[] ="rpc_call";
 
-    if (write(cl->sockfd, request,sizeof(request)) < 0){
+    if (write(cl->sockfd, request,strlen(request) + 1) < 0){
         perror("Error reading");
         exit(EXIT_FAILURE);
     }
