@@ -503,11 +503,13 @@ field. The client will free these by rpc_data_free (defined below).*/
         fprintf(stdout, "calling %s, with arguments %d...\n", h->name, payload->data1);
     }else{
         fprintf(stdout, "calling %s, with arguments ", h->name);
-        int * array1 = (int*)payload->data2;
-        for(int i = 0; i < payload->data2_len; i++){
-            fprintf(stdout,"%d ",array1[i]);
+        if(payload->data2 != NULL){
+            int * array1 = (int*)payload->data2;
+            for(int i = 0; i < payload->data2_len; i++){
+                fprintf(stdout,"%d ",array1[i]);
+            }
+            fprintf(stdout,"...\n");
         }
-        fprintf(stdout,"...\n");
     }
 
 
