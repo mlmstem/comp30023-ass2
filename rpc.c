@@ -233,25 +233,28 @@ void* handle_client_request(void* ptr){
                 perror("Error writting from socket");
                 exit(EXIT_FAILURE);
             }
-            rpc_data* args;
-            rpc_data* args2;
-            if(read(srv->cur_client, &args,sizeof(args)) < 0){
+            rpc_data* args = malloc(sizeof(rpc_data));
+            char name[30];
+            if(read(srv->cur_client, args,sizeof(rpc_data)) < 0){
                 perror("Eorror reading");
                 exit(EXIT_FAILURE);
-        }
-            if(read(srv->cur_client, &args2,sizeof(args2)) < 0){
-                perror("Eorror reading");
-                exit(EXIT_FAILURE);
-        }
-
-            if(args2 != NULL){
-                args2->data2 = (char*)args2->data2;
-                printf("%s : arguments %d and %d\n", (char*)args2->data2, args->data1, *(int*)args->data2);
-            }else{
-                printf("null: called");
             }
 
-    
+
+            if(read(srv->cur_client, name,sizeof(name)) < 0){
+                perror("Eorror reading");
+                exit(EXIT_FAILURE);
+        }
+
+            if (args->data2_len == 1){
+                char n1 = args->data1;
+                char n2 = ((char *)args->data2)[0];
+            
+                fprintf(stdout,"handler %s : arguments %d and %d\n",name, n1, n2);
+            }else if (args->data2_len == 0){
+
+                fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
+            }    
         }
     }
 
@@ -463,7 +466,6 @@ the find operation fails, it returns NULL*/
     }
 
     for (int i = 0; i < register_num; i++){
-        // segmentation faults
         if(strcmp(map_r[i].name, name) == 0){
             fprintf(stdout, "rpc_find: instance 0, returned handle for function %s\n", name);
             strcpy(handle1->name, name);
@@ -500,9 +502,15 @@ field. The client will free these by rpc_data_free (defined below).*/
     /* print the initial output*/
 
     if (payload->data2_len == 0){
-        fprintf(stdout, "calling %s, with arguments %d...\n", h->name, payload->data1);
-    }else{
-        fprintf(stdout, "calling %s, with arguments ", h->name);
+        fprintf(stdout, "rpc_call: instance 0, calling %s, with arguments %d...\n", h->name, payload->data1);
+    }else if (payload->data2_len == 1){
+        char n1 = payload->data1;
+        char n2 = ((char *)payload->data2)[0];
+        fprintf(stdout, "rpc_call: instance 0, add2: arguments %d and %d\n", n1, n2);
+    }
+    else{
+
+        fprintf(stdout, "rpc_call: instance 0, calling %s, with arguments ", h->name);
         if(payload->data2 != NULL){
             int * array1 = (int*)payload->data2;
             for(int i = 0; i < payload->data2_len; i++){
@@ -518,20 +526,30 @@ field. The client will free these by rpc_data_free (defined below).*/
     rpc_handler handler_call;
 
 
+// read the functions and its name register in the server
+
+    // read the number of functions
 
     if(read(cl->sockfd, &register_num,sizeof(register_num)) < 0){
         perror("Error reading");
         exit(EXIT_FAILURE);
     }
     map_r = (FunctionMap*)malloc(sizeof(FunctionMap) * register_num);
+    // read all the functions and its names
 
     if (read(cl->sockfd, map_r, sizeof(FunctionMap) * register_num) < 0) {
         perror("Error reading from socket");
         exit(EXIT_FAILURE);
 }
 
+    // send the initial arguments to the server so the server can prints the arguments
 
-    if(write(cl->sockfd, payload,sizeof(payload)) < 0){
+    if(write(cl->sockfd, payload,sizeof(rpc_data)) < 0){
+        perror("Eorror reading");
+        exit(EXIT_FAILURE);
+    }
+
+    if(write(cl->sockfd, h->name,strlen(h->name) + 1) < 0){
         perror("Eorror reading");
         exit(EXIT_FAILURE);
     }
@@ -542,29 +560,34 @@ field. The client will free these by rpc_data_free (defined below).*/
             rpc_data* result = handler_call(payload);
 
             // prints the result
-            if (result->data2_len == 0){
-                fprintf(stdout, "calling %s, with arguments %d...\n", h->name, result->data1);
-            }else{
-                fprintf(stdout, "calling %s, with arguments ", h->name);
-                int * array1 = (int*)result->data2;
-            for(int i = 0; i < result->data2_len; i++){
-                fprintf(stdout,"%d ",array1[i]);
+             if (result->data2_len == 0){
+                fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, payload->data1);
+            }else if (result->data2_len == 1){
+                char n1 = result->data1;
+                char n2 = ((char *)result->data2)[0];
+                fprintf(stdout, "rpc_call: instance 0, call of %s received result %d and %d\n", h->name, n1, n2);
             }
-                fprintf(stdout,"...\n");
+            else{
+
+                fprintf(stdout, "rpc_call: instance 0, call of %s received result ", h->name);
+                if(result->data2 != NULL){
+                    int * array1 = (int*)result->data2;
+                    for(int i = 0; i < result->data2_len; i++){
+                        fprintf(stdout,"%d and ",array1[i]);
+                    }
+                    fprintf(stdout,"...\n");
+                }
             }
 
-
+            // the result does not need to send back to server
+            /*
             if(write(cl->sockfd,result->data2,sizeof(result->data2))<0){
                 perror("Eorror reading");
                 exit(EXIT_FAILURE);
                 }
-            
+                */   
         }
     }
-
-    // write back to server to communicate the data argument
-
-
 
     return NULL;
 }

@@ -55,7 +55,9 @@ int main(int argc, char *argv[]) {
 
             rpc_handle *next = rpc_find(state, function_name1);
 
-            rpc_data randomd ={.data1 =1, .data2_len =1, .data2=NULL};
+            int x = 1;
+
+            rpc_data randomd ={.data1 =1, .data2_len =1, .data2=&x};
 
             //read(state->sockfd, function_name, sizeof(function_name));
             rpc_call(state,next,&randomd);
