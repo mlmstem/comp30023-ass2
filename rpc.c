@@ -224,6 +224,12 @@ void* handle_client_request(void* ptr){
 
         if(strcmp(request, "rpc_call") == 0){
 
+            /*EDIT FROM HERE, SO THE SERVER NO LONGER SENDING THE FUNCTIONMAP ARRAY TO CLIENT 
+            INSTEAD CALLING IT LOCALLY AND SEND RESULT SO CLIENT CAN PRINTF THE OUTPUT 
+            */
+
+
+           /* 
             if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
                 perror("Error writing from socket");
                 exit(EXIT_FAILURE);
@@ -233,13 +239,37 @@ void* handle_client_request(void* ptr){
                 perror("Error writting from socket");
                 exit(EXIT_FAILURE);
             }
+            */
+
+           /* TO CALL THE FUNCTION, ONLY REQUIRES THE NAME AND DATA */
+
+
             rpc_data* args = malloc(sizeof(rpc_data));
+            
+
             char name[30];
             if(read(srv->cur_client, args,sizeof(rpc_data)) < 0){
                 perror("Eorror reading");
                 exit(EXIT_FAILURE);
             }
+            if(args->data2_len > 0){
+                args->data2 = malloc(sizeof(args->data2));
+                if (read(srv->cur_client, args->data2, args->data2_len) < 0) {
+                    perror("Error reading");
+                    exit(EXIT_FAILURE);
+            }
+            }
+            size_t name_length;
+            if (read(srv->cur_client, &name_length, sizeof(name_length)) < 0) {
+                perror("Error reading from socket");
+                exit(EXIT_FAILURE);
+            }
 
+            char* name = malloc(name_length);
+            if (name == NULL) {
+                perror("Memory allocation error");
+                exit(EXIT_FAILURE);
+            }
 
             if(read(srv->cur_client, name,sizeof(name)) < 0){
                 perror("Eorror reading");
@@ -247,23 +277,31 @@ void* handle_client_request(void* ptr){
         }
 
 
+
             // potential segmentation faults
             // needs to malloc memory for data2 since its a void pointer
 
-            if (args->data2_len > 0) {
-                args->data2 = malloc(args->data2_len); // Allocate memory for data2
-                if (args->data2 == NULL) {
-                    perror("Error allocating memory");
-                    exit(EXIT_FAILURE);
+            if (args->data2_len > 1) {
+                // add printf
+            
+                
+                fprintf(stdout, "handler %s : arguments ",name);
+
+                if(args->data2 != NULL){
+
+                int * array1 = (int*)args->data2;
+
+                for(int i = 0; i < args->data2_len; i++){
+
+                    fprintf(stdout,"%d and ",array1[i]);
                 }
+
+                fprintf(stdout,"...\n");
             }
+                }
+
+            
     
-            if (read(srv->cur_client, args->data2, args->data2_len) < 0) {
-                perror("Error reading");
-                exit(EXIT_FAILURE);
-            }
-
-
             if (args->data2_len == 1){
                 char n1 = args->data1;
                 char n2 = ((char *)args->data2)[0];
@@ -272,7 +310,37 @@ void* handle_client_request(void* ptr){
             }else if (args->data2_len == 0){
 
                 fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
-            }  
+            }
+
+            /* retrive the handler and gets the result*/
+
+            rpc_data* result;
+            rpc_handler handler_call;
+            for(int i = 0; i < srv->number_handlers; i++){
+                if (strcmp(srv->map[i].name, name) == 0){
+
+            // program failed at this stage caused an segmentation error
+                handler_call = srv->map[i].handler;
+            // 
+                result = handler_call(args);
+
+            }
+        }
+
+            // send the data over the socket
+            
+            if(write(srv->cur_client, result,sizeof(rpc_data)) < 0){
+                perror("Eorror reading");
+                exit(EXIT_FAILURE);
+            } 
+
+            if (args->data2_len > 0) {
+            if (write(srv->cur_client, result->data2, result->data2_len) < 0) {
+                perror("Error writing data2");
+                exit(EXIT_FAILURE);
+    }
+}
+
 
             free(args->data2);
             free(args);  
@@ -542,14 +610,19 @@ field. The client will free these by rpc_data_free (defined below).*/
     }
 
 
-    int register_num;
-    FunctionMap* map_r;
-    rpc_handler handler_call;
+    //int register_num;
+    //FunctionMap* map_r;
+    //rpc_handler handler_call;
 
 
-// read the functions and its name register in the server
+/* EDIT THIS CODE SO THE FUNCTIONS ALWAYS CALLED ON THE SERVER END INSTEAD OF CLIENT END
+ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
-    // read the number of functions
+// NEED EDIT FROM THIS LINE  (SEND THE DATA TO THE SERVER AND LET SERVER CALL THE FUNCTION)
+
+
+// SEND THE DATA TO THE CLIENT -> RECEIVES THE RESULT (MALLOC FOR BOTH RPC_DATA AND DATA2)
+/*
 
     if(read(cl->sockfd, &register_num,sizeof(register_num)) < 0){
         perror("Error reading");
@@ -562,6 +635,7 @@ field. The client will free these by rpc_data_free (defined below).*/
         perror("Error reading from socket");
         exit(EXIT_FAILURE);
 }
+*/
 
     // send the initial arguments to the server so the server can prints the arguments
 
@@ -570,49 +644,75 @@ field. The client will free these by rpc_data_free (defined below).*/
         perror("Eorror reading");
         exit(EXIT_FAILURE);
     }
+    if (payload->data2_len > 0){
+        if(write(cl->sockfd, payload->data2,sizeof(payload->data2)) < 0){
+            perror("Eorror reading");
+            exit(EXIT_FAILURE);
+    }
+    }
+    size_t name_length = strlen(h->name) + 1; 
+     // Calculate the length of the string
+
+    if (write(cl->sockfd, &name_length, sizeof(name_length)) < 0) {
+        perror("Error writing to socket");
+        exit(EXIT_FAILURE);
+    }   
+    /*send over data len first let the server allocate memory*/
 
     if(write(cl->sockfd, h->name,strlen(h->name) + 1) < 0){
         perror("Eorror reading");
         exit(EXIT_FAILURE);
     }
+    rpc_data* result = (rpc_data*)malloc(sizeof(rpc_data));
+    
 
-    for(int i = 0; i < register_num; i++){
-        if (strcmp(map_r[i].name, h->name) == 0){
-
-            // program failed at this stage caused an segmentation error
-            handler_call = map_r[i].handler;
-            // 
-            rpc_data* result = handler_call(payload);
-
-            // prints the result
-             if (result->data2_len == 0){
-                fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, payload->data1);
-            }else if (result->data2_len == 1){
-                char n1 = result->data1;
-                char n2 = ((char *)result->data2)[0];
-                fprintf(stdout, "rpc_call: instance 0, call of %s received result %d and %d\n", h->name, n1, n2);
-            }
-            else{
-
-                fprintf(stdout, "rpc_call: instance 0, call of %s received result ", h->name);
-                if(result->data2 != NULL){
-                    int * array1 = (int*)result->data2;
-                    for(int i = 0; i < result->data2_len; i++){
-                        fprintf(stdout,"%d and ",array1[i]);
-                    }
-                    fprintf(stdout,"...\n");
-                }
-            }
-
-            // the result does not need to send back to server
-            /*
-            if(write(cl->sockfd,result->data2,sizeof(result->data2))<0){
-                perror("Eorror reading");
-                exit(EXIT_FAILURE);
-                }
-                */   
-        }
+    if (read(cl->sockfd, result, sizeof(rpc_data)) < 0) {
+        perror("Error reading from socket");
+        exit(EXIT_FAILURE);
     }
+    if (result->data2_len > 0){
+        result->data2 = malloc(sizeof(result->data2));
+        if (read(cl->sockfd, result->data2, sizeof(result->data2)) < 0) {
+            perror("Error reading from socket");
+            exit(EXIT_FAILURE);
+    }
+    }   
+
+
+    // prints the result
+    if (result->data2_len == 0){
+        fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, payload->data1);
+
+    }else if (result->data2_len == 1){
+
+        char n1 = result->data1;
+        char n2 = ((char *)result->data2)[0];
+
+        fprintf(stdout, "rpc_call: instance 0, call of %s received result %d and %d\n", h->name, n1, n2);
+    }
+    else{
+
+        /*all the data stored in data2  which can be used as an int array */
+
+        fprintf(stdout, "rpc_call: instance 0, call of %s received result ", h->name);
+
+        if(result->data2 != NULL){
+
+        int * array1 = (int*)result->data2;
+
+        for(int i = 0; i < result->data2_len; i++){
+
+            fprintf(stdout,"%d and ",array1[i]);
+            }
+
+        fprintf(stdout,"...\n");
+            }
+        }
+
+
+// the result does not need to send back to server
+            
+    
 
     return NULL;
 }
