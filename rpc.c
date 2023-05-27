@@ -256,12 +256,11 @@ void* handle_client_request(void* ptr){
                     perror("Error allocating memory");
                     exit(EXIT_FAILURE);
                 }
+            }
     
             if (read(srv->cur_client, args->data2, args->data2_len) < 0) {
                 perror("Error reading");
                 exit(EXIT_FAILURE);
-            }
-
             }
 
 
@@ -274,7 +273,7 @@ void* handle_client_request(void* ptr){
 
                 fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
             }  
-            
+
             free(args->data2);
             free(args);  
         }
@@ -580,8 +579,9 @@ field. The client will free these by rpc_data_free (defined below).*/
     for(int i = 0; i < register_num; i++){
         if (strcmp(map_r[i].name, h->name) == 0){
 
-            // program failed at this stage
+            // program failed at this stage caused an segmentation error
             handler_call = map_r[i].handler;
+            // 
             rpc_data* result = handler_call(payload);
 
             // prints the result
