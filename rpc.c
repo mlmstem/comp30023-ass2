@@ -246,6 +246,25 @@ void* handle_client_request(void* ptr){
                 exit(EXIT_FAILURE);
         }
 
+
+            // potential segmentation faults
+            // needs to malloc memory for data2 since its a void pointer
+
+            if (args->data2_len > 0) {
+                args->data2 = malloc(args->data2_len); // Allocate memory for data2
+                if (args->data2 == NULL) {
+                    perror("Error allocating memory");
+                    exit(EXIT_FAILURE);
+                }
+    
+            if (read(srv->cur_client, args->data2, args->data2_len) < 0) {
+                perror("Error reading");
+                exit(EXIT_FAILURE);
+            }
+
+            }
+
+
             if (args->data2_len == 1){
                 char n1 = args->data1;
                 char n2 = ((char *)args->data2)[0];
@@ -254,7 +273,10 @@ void* handle_client_request(void* ptr){
             }else if (args->data2_len == 0){
 
                 fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
-            }    
+            }  
+            
+            free(args->data2);
+            free(args);  
         }
     }
 
@@ -544,6 +566,7 @@ field. The client will free these by rpc_data_free (defined below).*/
 
     // send the initial arguments to the server so the server can prints the arguments
 
+    // data sent was incorrect -> needs further debugging
     if(write(cl->sockfd, payload,sizeof(rpc_data)) < 0){
         perror("Eorror reading");
         exit(EXIT_FAILURE);
@@ -556,6 +579,8 @@ field. The client will free these by rpc_data_free (defined below).*/
 
     for(int i = 0; i < register_num; i++){
         if (strcmp(map_r[i].name, h->name) == 0){
+
+            // program failed at this stage
             handler_call = map_r[i].handler;
             rpc_data* result = handler_call(payload);
 
