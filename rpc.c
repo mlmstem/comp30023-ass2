@@ -246,8 +246,6 @@ void* handle_client_request(void* ptr){
 
             rpc_data* args = malloc(sizeof(rpc_data));
             
-
-            char name[30];
             if(read(srv->cur_client, args,sizeof(rpc_data)) < 0){
                 perror("Eorror reading");
                 exit(EXIT_FAILURE);
