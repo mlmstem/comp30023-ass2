@@ -252,25 +252,21 @@ void* handle_client_request(void* ptr){
             }
             if(args->data2_len > 0){
                 args->data2 = malloc(sizeof(args->data2));
-                if (read(srv->cur_client, args->data2, args->data2_len) < 0) {
+                if (read(srv->cur_client, args->data2, sizeof(args->data2)) < 0) {
                     perror("Error reading");
                     exit(EXIT_FAILURE);
             }
             }
+            /*
             size_t name_length;
             if (read(srv->cur_client, &name_length, sizeof(name_length)) < 0) {
                 perror("Error reading from socket");
                 exit(EXIT_FAILURE);
-            }
+            }*/
 
-            char* name = malloc(name_length);
-            if (name == NULL) {
-                perror("Memory allocation error");
-                exit(EXIT_FAILURE);
-            }
-
-            if(read(srv->cur_client, name,sizeof(name)) < 0){
-                perror("Eorror reading");
+            char name[30];
+            if(read(srv->cur_client, name, sizeof(name)) < 0){
+                perror("Eorror reading from the name");
                 exit(EXIT_FAILURE);
         }
 
@@ -322,13 +318,15 @@ void* handle_client_request(void* ptr){
             // 
                 result = handler_call(args);
 
+                fprintf(stdout, "the result data 1 is %d\n", result->data1);
+
             }
         }
 
-            // send the data over the socket
+            // send the data over the socket (BAD ADDRESS ERROR ADDRESS NOT SENT)
             
             if(write(srv->cur_client, result,sizeof(rpc_data)) < 0){
-                perror("Eorror reading");
+                perror("Eorror sendinig rusult");
                 exit(EXIT_FAILURE);
             } 
 
@@ -593,7 +591,7 @@ field. The client will free these by rpc_data_free (defined below).*/
     }else if (payload->data2_len == 1){
         char n1 = payload->data1;
         char n2 = ((char *)payload->data2)[0];
-        fprintf(stdout, "rpc_call: instance 0, add2: arguments %d and %d\n", n1, n2);
+        fprintf(stdout, "rpc_call: instance 0, %s: arguments %d and %d\n",h->name, n1, n2);
     }
     else{
 
@@ -620,20 +618,6 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
 
 // SEND THE DATA TO THE CLIENT -> RECEIVES THE RESULT (MALLOC FOR BOTH RPC_DATA AND DATA2)
-/*
-
-    if(read(cl->sockfd, &register_num,sizeof(register_num)) < 0){
-        perror("Error reading");
-        exit(EXIT_FAILURE);
-    }
-    map_r = (FunctionMap*)malloc(sizeof(FunctionMap) * register_num);
-    // read all the functions and its names
-
-    if (read(cl->sockfd, map_r, sizeof(FunctionMap) * register_num) < 0) {
-        perror("Error reading from socket");
-        exit(EXIT_FAILURE);
-}
-*/
 
     // send the initial arguments to the server so the server can prints the arguments
 
@@ -648,17 +632,20 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
             exit(EXIT_FAILURE);
     }
     }
-    size_t name_length = strlen(h->name) + 1; 
+
+    /*size_t name_length = strlen(h->name) + 1; 
      // Calculate the length of the string
 
     if (write(cl->sockfd, &name_length, sizeof(name_length)) < 0) {
         perror("Error writing to socket");
         exit(EXIT_FAILURE);
-    }   
+    }   */
     /*send over data len first let the server allocate memory*/
 
-    if(write(cl->sockfd, h->name,strlen(h->name) + 1) < 0){
-        perror("Eorror reading");
+    printf("the sending string is :%s\n", h->name);
+
+    if(write(cl->sockfd, h->name,strlen(h->name)+1) < 0){
+        perror("Eorror wrting name to the socket");
         exit(EXIT_FAILURE);
     }
     rpc_data* result = (rpc_data*)malloc(sizeof(rpc_data));
@@ -679,7 +666,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
     // prints the result
     if (result->data2_len == 0){
-        fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, payload->data1);
+        fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, result->data1);
 
     }else if (result->data2_len == 1){
 
