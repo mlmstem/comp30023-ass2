@@ -192,6 +192,14 @@ This function will not usually return. It should only return if srv is NULL or y
             exit(EXIT_FAILURE);
         }
 
+        void* thread_result;
+        pthread_join(client_thread, &thread_result);
+
+        // Check if client has closed the connection
+        if (!thread_result) {
+            break;
+        }
+
         }
         //free(response);
 }
@@ -199,13 +207,23 @@ This function will not usually return. It should only return if srv is NULL or y
 void* handle_client_request(void* ptr){
 
     rpc_server* srv = (rpc_server*)ptr;
-
+    int count =0;
     while(1){
-        char request[30];
+        count++;
+        printf("%d\n", count);
+        char request [30];
+        
+
         if (read(srv->cur_client, request, sizeof(request)) < 0) {
-            perror("Error reading from socket");
+            // stops once no more request from the client 
             close(srv->cur_client);
             pthread_exit(NULL);
+        }
+
+        printf("the request string is %s\n", request);
+
+        if (strlen(request) == 0){
+            break;
         }
 
 
@@ -243,17 +261,25 @@ void* handle_client_request(void* ptr){
 
            /* TO CALL THE FUNCTION, ONLY REQUIRES THE NAME AND DATA */
 
+            printf("first occurence\n");
+
 
             rpc_data* args = malloc(sizeof(rpc_data));
             
+            int old = args->data1;
+            printf("%d\n", old);
             if(read(srv->cur_client, args,sizeof(rpc_data)) < 0){
-                perror("Eorror reading");
+                perror("Eorror reading the rpc_data");
                 exit(EXIT_FAILURE);
             }
+            if (old == args->data1){
+                break;
+            }
+            printf("read first \n%d", args->data1);
             if(args->data2_len > 0){
                 args->data2 = malloc(sizeof(args->data2));
                 if (read(srv->cur_client, args->data2, sizeof(args->data2)) < 0) {
-                    perror("Error reading");
+                    perror("Error reading rpc_data2");
                     exit(EXIT_FAILURE);
             }
             }
@@ -293,8 +319,6 @@ void* handle_client_request(void* ptr){
                 fprintf(stdout,"...\n");
             }
                 }
-
-            
     
             if (args->data2_len == 1){
                 char n1 = args->data1;
@@ -338,8 +362,7 @@ void* handle_client_request(void* ptr){
 }
 
 
-            free(args->data2);
-            free(args);  
+            rpc_data_free(args);
         }
     }
 
@@ -523,7 +546,7 @@ the find operation fails, it returns NULL*/
 // change sizeof(request) to strlen(request) to ensure the string is properly sent
 
     char request[] ="rpc_find";
-
+// Invalid read of size 4
     if (write(cl->sockfd, request,strlen(request) + 1) < 0){
         perror("Error reading");
         exit(EXIT_FAILURE);
@@ -578,6 +601,8 @@ field. The client will free these by rpc_data_free (defined below).*/
 
 
     char request[] ="rpc_call";
+
+    //error cuase bakc this line
 
     if (write(cl->sockfd, request,strlen(request) + 1) < 0){
         perror("Error reading");
@@ -706,6 +731,20 @@ void rpc_close_client(rpc_client *cl) {
     if (cl == NULL) {
         return;
     }
+    cl->server_state = -1;
+
+    if (cl->res != NULL) {
+        freeaddrinfo(cl->res);
+        cl->res = NULL; // Set to NULL to avoid double-freeing
+    }
+    char buffer[MAX_NUM];
+    ssize_t bytesRead;
+
+    while ((bytesRead = read(cl->sockfd, buffer, sizeof(buffer))) > 0) {
+        // Process or discard the received data as needed
+        // ...
+    }
+    
     if (cl->sockfd != -1)
         close(cl->sockfd);
 
