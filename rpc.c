@@ -280,7 +280,6 @@ void* handle_client_request(void* ptr){
 
 }
 
-
             rpc_data_free(args);
         }
     }
@@ -523,6 +522,13 @@ field. The client will free these by rpc_data_free (defined below).*/
 
     /*same code implementation as rpc_find*/
 
+    if (payload->data1 == 0 && payload->data2 == NULL){
+        return NULL;
+    }
+    if (h->name == NULL){
+        return NULL;
+    }
+
 
     char request[] ="rpc_call";
 
@@ -578,6 +584,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
     
 
     if (read(cl->sockfd, result, sizeof(rpc_data)) < 0) {
+        return NULL;
         perror("Error reading from socket");
         exit(EXIT_FAILURE);
     }
