@@ -43,7 +43,7 @@ struct rpc_server {
 rpc_server *rpc_init_server(int port) {
 /*Called before rpc_register. Use this for whatever you need. It should return a pointer to a struct (that you
 define) containing server state information on success and NULL on failure.*/
-fprintf(stdout,"rpc_init_server: instance 0, port %d\n", port);
+//fprintf(stdout,"rpc_init_server: instance 0, port %d\n", port);
 rpc_server * new_server = (rpc_server*)malloc(sizeof(rpc_server));
 if (new_server != NULL){
     new_server->server_state = 1;
@@ -59,7 +59,7 @@ int rpc_register(rpc_server *srv, char *name, rpc_handler handler) {
 It should return a non-negative number on success (possibly an ID for this handler, but a constant is fine), and -1
 on failure. If any of the arguments is NULL then -1 should be returned.*/
     
-    fprintf(stdout, "rpc_register: instance 0, %s (handler) as %s\n", name, name);
+    //fprintf(stdout, "rpc_register: instance 0, %s (handler) as %s\n", name, name);
 
     if (srv == NULL || name == NULL || handler == NULL){
         return -1;
@@ -150,7 +150,7 @@ This function will not usually return. It should only return if srv is NULL or y
     /*Make sure the service name is passed in correctly so getaddressinfo not
     causing error*/
 
-    fprintf(stdout, "rpc_serve_all: instance 0\n");
+    //fprintf(stdout, "rpc_serve_all: instance 0\n");
 
     char service[20];
     sprintf(service, "%d", srv->port);
@@ -193,13 +193,13 @@ This function will not usually return. It should only return if srv is NULL or y
         }
 
 
-        printf("the program continue to run \n");
+        //("the program continue to run \n");
         void* thread_result;
         pthread_join(client_thread, &thread_result);
 
         // Check if client has closed the connection
         if (!thread_result) {
-            printf("running stops\n");
+            //printf("running stops\n");
             break;
         }
 
@@ -213,7 +213,7 @@ void* handle_client_request(void* ptr){
     int count =0;
     while(1){
         count++;
-        printf("%d\n", count);
+        //printf("%d\n", count);
         char request [30];
         // sets the request to 0 to avoid the arguments passed into request memory has being cleared
         memset(request,0,sizeof(request));
@@ -225,7 +225,7 @@ void* handle_client_request(void* ptr){
             pthread_exit(NULL);
         }
 
-        printf("the request string is %s\n", request);
+        //printf("the request string is %s\n", request);
 
         if (strlen(request) == 0){
             break;
@@ -266,13 +266,13 @@ void* handle_client_request(void* ptr){
 
            /* TO CALL THE FUNCTION, ONLY REQUIRES THE NAME AND DATA */
 
-            printf("first occurence\n");
+            //printf("first occurence\n");
 
 
             rpc_data* args = malloc(sizeof(rpc_data));
             
             int old = args->data1;
-            printf("%d\n", old);
+            //printf("%d\n", old);
             if(read(srv->cur_client, args,sizeof(rpc_data)) < 0){
                 perror("Eorror reading the rpc_data");
                 exit(EXIT_FAILURE);
@@ -280,7 +280,7 @@ void* handle_client_request(void* ptr){
             if (old == args->data1){
                 break;
             }
-            printf("read first \n%d", args->data1);
+            //printf("read first \n%d", args->data1);
             if(args->data2_len > 0){
                 args->data2 = malloc(sizeof(args->data2));
                 if (read(srv->cur_client, args->data2, sizeof(args->data2)) < 0) {
@@ -305,12 +305,12 @@ void* handle_client_request(void* ptr){
 
             // potential segmentation faults
             // needs to malloc memory for data2 since its a void pointer
-
+/*
             if (args->data2_len > 1) {
                 // add printf
             
                 
-                fprintf(stdout, "handler %s : arguments ",name);
+                //fprintf(stdout, "handler %s : arguments ",name);
 
                 if(args->data2 != NULL){
 
@@ -318,10 +318,10 @@ void* handle_client_request(void* ptr){
 
                 for(int i = 0; i < args->data2_len; i++){
 
-                    fprintf(stdout,"%d and ",array1[i]);
+                    //fprintf(stdout,"%d and ",array1[i]);
                 }
 
-                fprintf(stdout,"...\n");
+                //fprintf(stdout,"...\n");
             }
                 }
     
@@ -329,11 +329,12 @@ void* handle_client_request(void* ptr){
                 char n1 = args->data1;
                 char n2 = ((char *)args->data2)[0];
             
-                fprintf(stdout,"handler %s : arguments %d and %d\n",name, n1, n2);
+                //fprintf(stdout,"handler %s : arguments %d and %d\n",name, n1, n2);
             }else if (args->data2_len == 0){
 
-                fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
+                //fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
             }
+            */
 
             /* retrive the handler and gets the result*/
 
@@ -347,7 +348,7 @@ void* handle_client_request(void* ptr){
             // 
                 result = handler_call(args);
 
-                fprintf(stdout, "the result data 1 is %d\n", result->data1);
+                //fprintf(stdout, "the result data 1 is %d\n", result->data1);
 
             }
         }
@@ -359,10 +360,10 @@ void* handle_client_request(void* ptr){
                 exit(EXIT_FAILURE);
             } 
 
-            if (args->data2_len > 0) {
-            if (write(srv->cur_client, result->data2, result->data2_len) < 0) {
-                perror("Error writing data2");
-                exit(EXIT_FAILURE);
+            if (result->data2_len > 0) {
+                if (write(srv->cur_client, result->data2, sizeof(result->data2)) < 0) {
+                    perror("Error writing data2");
+                    exit(EXIT_FAILURE);
             }
 
             // make sure all the extra bytes in the server is cleared into a new buffer
@@ -517,7 +518,7 @@ text-based IP address and numeric port number passed in on the command line.
 The function should return a non-NULL pointer to a struct (that you define) containing client state information on
 success and NULL on failure.*/
 
-    fprintf(stdout, "rpc_init_client: instance 0, addr %s, port %d \n", addr, port);
+    //fprintf(stdout, "rpc_init_client: instance 0, addr %s, port %d \n", addr, port);
     rpc_client* new_cl = (rpc_client*)malloc(sizeof(rpc_client));
 
     strcpy(new_cl->addr, addr);
@@ -566,7 +567,7 @@ the find operation fails, it returns NULL*/
         exit(EXIT_FAILURE);
     }
 
-    fprintf(stdout, "rpc_find: instance 0, %s\n", name);
+    //fprintf(stdout, "rpc_find: instance 0, %s\n", name);
     int register_num;
     FunctionMap* map_r;
 
@@ -589,13 +590,13 @@ the find operation fails, it returns NULL*/
 
     for (int i = 0; i < register_num; i++){
         if(strcmp(map_r[i].name, name) == 0){
-            fprintf(stdout, "rpc_find: instance 0, returned handle for function %s\n", name);
+            //fprintf(stdout, "rpc_find: instance 0, returned handle for function %s\n", name);
             strcpy(handle1->name, name);
             return handle1; 
         }
     }
 
-    fprintf(stdout, "rpc_find: instance 0, wasn't able to find function %s\n", name);
+    //fprintf(stdout, "rpc_find: instance 0, wasn't able to find function %s\n", name);
 
 
     return NULL;
@@ -624,7 +625,7 @@ field. The client will free these by rpc_data_free (defined below).*/
     }
 
     /* print the initial output*/
-
+    /*
     if (payload->data2_len == 0){
         fprintf(stdout, "rpc_call: instance 0, calling %s, with arguments %d...\n", h->name, payload->data1);
     }else if (payload->data2_len == 1){
@@ -643,8 +644,9 @@ field. The client will free these by rpc_data_free (defined below).*/
             fprintf(stdout,"...\n");
         }
     }
+    */
 
-
+    
     //int register_num;
     //FunctionMap* map_r;
     //rpc_handler handler_call;
@@ -665,7 +667,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
         perror("Eorror reading");
         exit(EXIT_FAILURE);
     }
-    if (payload->data2_len > 0){
+    if (payload->data2 != NULL){
         if(write(cl->sockfd, payload->data2,sizeof(payload->data2)) < 0){
             perror("Eorror reading");
             exit(EXIT_FAILURE);
@@ -681,7 +683,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
     }   */
     /*send over data len first let the server allocate memory*/
 
-    printf("the sending string is :%s\n", h->name);
+    //printf("the sending string is :%s\n", h->name);
 
     if(write(cl->sockfd, h->name,strlen(h->name)+1) < 0){
         perror("Eorror wrting name to the socket");
@@ -704,6 +706,8 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
 
     // prints the result
+
+    /*
     if (result->data2_len == 0){
         fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, result->data1);
 
@@ -717,7 +721,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
     else{
 
         /*all the data stored in data2  which can be used as an int array */
-
+    /*
         fprintf(stdout, "rpc_call: instance 0, call of %s received result ", h->name);
 
         if(result->data2 != NULL){
@@ -731,13 +735,15 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
         fprintf(stdout,"...\n");
             }
-        }
-    
+        */
+        
+
     /*end of the call, remove all the extra bytes in client's buffer*/
 
                 
-    return NULL;
+    return result;
 }
+
 
 void rpc_close_client(rpc_client *cl) {
     if (cl == NULL) {
