@@ -219,8 +219,8 @@ void* handle_client_request(void* ptr){
             }
             //printf("read first \n%d", args->data1);
             if(args->data2_len > 0){
-                args->data2 = malloc(sizeof(args->data2));
-                if (read(srv->cur_client, args->data2, sizeof(args->data2)) < 0) {
+                args->data2 = (void*)malloc(args->data2_len);
+                if (read(srv->cur_client, args->data2, args->data2_len) < 0) {
                     perror("Error reading rpc_data2");
                     exit(EXIT_FAILURE);
             }
@@ -270,7 +270,7 @@ void* handle_client_request(void* ptr){
             } 
 
             if (result->data2_len > 0) {
-                if (write(srv->cur_client, result->data2, sizeof(result->data2)) < 0) {
+                if (write(srv->cur_client, result->data2, result->data2_len) < 0) {
                     perror("Error writing data2");
                     exit(EXIT_FAILURE);
             }
@@ -533,32 +533,7 @@ field. The client will free these by rpc_data_free (defined below).*/
         exit(EXIT_FAILURE);
     }
 
-    /* print the initial output*/
-    /*
-    if (payload->data2_len == 0){
-        fprintf(stdout, "rpc_call: instance 0, calling %s, with arguments %d...\n", h->name, payload->data1);
-    }else if (payload->data2_len == 1){
-        char n1 = payload->data1;
-        char n2 = ((char *)payload->data2)[0];
-        fprintf(stdout, "rpc_call: instance 0, %s: arguments %d and %d\n",h->name, n1, n2);
-    }
-    else{
-
-        fprintf(stdout, "rpc_call: instance 0, calling %s, with arguments ", h->name);
-        if(payload->data2 != NULL){
-            int * array1 = (int*)payload->data2;
-            for(int i = 0; i < payload->data2_len; i++){
-                fprintf(stdout,"%d ",array1[i]);
-            }
-            fprintf(stdout,"...\n");
-        }
-    }
-    */
-
-    
-    //int register_num;
-    //FunctionMap* map_r;
-    //rpc_handler handler_call;
+   
 
 
 /* EDIT THIS CODE SO THE FUNCTIONS ALWAYS CALLED ON THE SERVER END INSTEAD OF CLIENT END
@@ -577,7 +552,8 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
         exit(EXIT_FAILURE);
     }
     if (payload->data2 != NULL){
-        if(write(cl->sockfd, payload->data2,sizeof(payload->data2)) < 0){
+        // try it with data->data2len
+        if(write(cl->sockfd, payload->data2,payload->data2_len) < 0){
             perror("Eorror reading");
             exit(EXIT_FAILURE);
     }
@@ -606,8 +582,8 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
         exit(EXIT_FAILURE);
     }
     if (result->data2_len > 0){
-        result->data2 = malloc(sizeof(result->data2));
-        if (read(cl->sockfd, result->data2, sizeof(result->data2)) < 0) {
+        result->data2 = malloc(result->data2_len);
+        if (read(cl->sockfd, result->data2, result->data2_len) < 0) {
             perror("Error reading from socket");
             exit(EXIT_FAILURE);
     }
