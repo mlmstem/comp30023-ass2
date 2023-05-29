@@ -64,60 +64,8 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
     if (srv == NULL || name == NULL || handler == NULL){
         return -1;
     }
-    /*
-    rpc_handler cur;
-    if (strcmp(name, "add2") == 0) {
-        cur = add2_i8;
-        
-    } else if (strcmp(name, "echo2") == 0) {
-        cur = echo_2;
     
-    } else if (strcmp(name, "add2_2") == 0) {
-        cur = add2_2;
-        
-    }else if (strcmp(name, "bad_null") == 0) {
-        cur = bad_null;
-        
-    }else if (strcmp(name, "bad_data2_2") == 0) {
-        cur = bad_data2_2;
-        
-    }else if (strcmp(name, "bad_data2_1") == 0) {
-        cur = bad_data2_1;
-        
-    }else if (strcmp(name, "sleep") == 0) {
-        cur = sleep_h;
-        
-    }
-    */
     
-
-    // create the socket;
-   /* srv->sockid = socket(AF_INET6,SOCK_STREAM, 0);
-    if(srv->sockid < 0){
-        perror("Error");
-        return -1;
-   }*/
-
-   /*memset(&srv->hints,0, sizeof(srv->hints));
-   srv->hints.ai_family = AF_INET6;
-   srv->hints.ai_socktype = SOCK_STREAM;
-   srv->hints.ai_flags = AI_PASSIVE;
-
-   char port_n[10];
-   sprintf(port_n, "%d",srv->port);
-   srv->server_state = getaddrinfo(NULL, port_n, &srv->hints, &srv->res);
-   int listenfd = socket(srv->res->ai_family,srv->res->ai_socktype,srv->res->ai_protocol);
-   srv->listenfd = listenfd;
-   // setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,&srv->res,sizeof(srv->res));
-
-
-   // bind and listen 
-
-    bind(listenfd, srv->res->ai_addr,srv->res->ai_addrlen);
-
-    // allow max of 10 client 
-    listen(listenfd, 10);*/
-   
 
    // record all the handlers in the servers 
 
@@ -252,18 +200,6 @@ void* handle_client_request(void* ptr){
             */
 
 
-           /* 
-            if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
-                perror("Error writing from socket");
-                exit(EXIT_FAILURE);
-            }
-
-            if (write(srv->cur_client, srv->map, sizeof(FunctionMap)* srv->number_handlers) < 0) {
-                perror("Error writting from socket");
-                exit(EXIT_FAILURE);
-            }
-            */
-
            /* TO CALL THE FUNCTION, ONLY REQUIRES THE NAME AND DATA */
 
             //printf("first occurence\n");
@@ -272,12 +208,13 @@ void* handle_client_request(void* ptr){
             rpc_data* args = malloc(sizeof(rpc_data));
             
             int old = args->data1;
+            int data2L = (int)args->data2_len;
             //printf("%d\n", old);
             if(read(srv->cur_client, args,sizeof(rpc_data)) < 0){
                 perror("Eorror reading the rpc_data");
                 exit(EXIT_FAILURE);
             }
-            if (old == args->data1){
+            if (old == args->data1 && data2L == args->data2_len){
                 break;
             }
             //printf("read first \n%d", args->data1);
@@ -305,36 +242,7 @@ void* handle_client_request(void* ptr){
 
             // potential segmentation faults
             // needs to malloc memory for data2 since its a void pointer
-/*
-            if (args->data2_len > 1) {
-                // add printf
-            
-                
-                //fprintf(stdout, "handler %s : arguments ",name);
-
-                if(args->data2 != NULL){
-
-                int * array1 = (int*)args->data2;
-
-                for(int i = 0; i < args->data2_len; i++){
-
-                    //fprintf(stdout,"%d and ",array1[i]);
-                }
-
-                //fprintf(stdout,"...\n");
-            }
-                }
-    
-            if (args->data2_len == 1){
-                char n1 = args->data1;
-                char n2 = ((char *)args->data2)[0];
-            
-                //fprintf(stdout,"handler %s : arguments %d and %d\n",name, n1, n2);
-            }else if (args->data2_len == 0){
-
-                //fprintf(stdout,"handler %s : arguments %d \n", name,args->data1);
-            }
-            */
+          
 
             /* retrive the handler and gets the result*/
 
@@ -349,6 +257,7 @@ void* handle_client_request(void* ptr){
                 result = handler_call(args);
 
                 //fprintf(stdout, "the result data 1 is %d\n", result->data1);
+                break;
 
             }
         }
@@ -707,36 +616,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
     // prints the result
 
-    /*
-    if (result->data2_len == 0){
-        fprintf(stdout, "rpc_call: instance 0, call of %s received result %d...\n", h->name, result->data1);
 
-    }else if (result->data2_len == 1){
-
-        char n1 = result->data1;
-        char n2 = ((char *)result->data2)[0];
-
-        fprintf(stdout, "rpc_call: instance 0, call of %s received result %d and %d\n", h->name, n1, n2);
-    }
-    else{
-
-        /*all the data stored in data2  which can be used as an int array */
-    /*
-        fprintf(stdout, "rpc_call: instance 0, call of %s received result ", h->name);
-
-        if(result->data2 != NULL){
-
-        int * array1 = (int*)result->data2;
-
-        for(int i = 0; i < result->data2_len; i++){
-
-            fprintf(stdout,"%d and ",array1[i]);
-            }
-
-        fprintf(stdout,"...\n");
-            }
-        */
-        
 
     /*end of the call, remove all the extra bytes in client's buffer*/
 
