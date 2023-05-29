@@ -189,14 +189,17 @@ This function will not usually return. It should only return if srv is NULL or y
         if (pthread_create(&client_thread, NULL, handle_client_request, (void*)srv) < 0){
             perror("error creating thread");
             close(srv->cur_client);
-            exit(EXIT_FAILURE);
+            exit(EXIT_SUCCESS);
         }
 
+
+        printf("the program continue to run \n");
         void* thread_result;
         pthread_join(client_thread, &thread_result);
 
         // Check if client has closed the connection
         if (!thread_result) {
+            printf("running stops\n");
             break;
         }
 
@@ -212,6 +215,8 @@ void* handle_client_request(void* ptr){
         count++;
         printf("%d\n", count);
         char request [30];
+        // sets the request to 0 to avoid the arguments passed into request memory has being cleared
+        memset(request,0,sizeof(request));
         
 
         if (read(srv->cur_client, request, sizeof(request)) < 0) {
@@ -358,7 +363,11 @@ void* handle_client_request(void* ptr){
             if (write(srv->cur_client, result->data2, result->data2_len) < 0) {
                 perror("Error writing data2");
                 exit(EXIT_FAILURE);
-    }
+            }
+
+            // make sure all the extra bytes in the server is cleared into a new buffer
+
+
 }
 
 
@@ -491,6 +500,7 @@ struct rpc_client {
     int server_state;
     int socket_type;
     struct addrinfo hints,*res;
+    int closed;
 };
 
 struct rpc_handle {
@@ -513,6 +523,7 @@ success and NULL on failure.*/
     strcpy(new_cl->addr, addr);
     new_cl->port = port;
     new_cl->sockfd = -1;
+    new_cl->closed = 0;
 
     char port_c[10];
     sprintf(port_c, "%d",port);
@@ -544,11 +555,14 @@ the find operation fails, it returns NULL*/
 
 
 // change sizeof(request) to strlen(request) to ensure the string is properly sent
+    if (cl->closed){
+        return NULL;
+    }
 
     char request[] ="rpc_find";
 // Invalid read of size 4
     if (write(cl->sockfd, request,strlen(request) + 1) < 0){
-        perror("Error reading");
+        perror("Error writinig request (rpc_find)");
         exit(EXIT_FAILURE);
     }
 
@@ -592,7 +606,7 @@ rpc_data *rpc_call(rpc_client *cl, rpc_handle *h, rpc_data *payload) {
 If the call fails, it returns NULL. NULL should be returned if any of the arguments are NULL. If this returns a
 non-NULL value, then it should dynamically allocate (by malloc) both the rpc_data structure and its data2
 field. The client will free these by rpc_data_free (defined below).*/
-    if(payload == NULL || h == NULL || cl == NULL){
+    if(payload == NULL || h == NULL || cl == NULL || cl->closed){
         return NULL;
     }
 
@@ -605,7 +619,7 @@ field. The client will free these by rpc_data_free (defined below).*/
     //error cuase bakc this line
 
     if (write(cl->sockfd, request,strlen(request) + 1) < 0){
-        perror("Error reading");
+        perror("Error writing (request rpc_call)");
         exit(EXIT_FAILURE);
     }
 
@@ -718,12 +732,10 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
         fprintf(stdout,"...\n");
             }
         }
-
-
-// the result does not need to send back to server
-            
     
+    /*end of the call, remove all the extra bytes in client's buffer*/
 
+                
     return NULL;
 }
 
@@ -732,18 +744,13 @@ void rpc_close_client(rpc_client *cl) {
         return;
     }
     cl->server_state = -1;
+    cl->closed =1;
 
     if (cl->res != NULL) {
         freeaddrinfo(cl->res);
         cl->res = NULL; // Set to NULL to avoid double-freeing
     }
-    char buffer[MAX_NUM];
-    ssize_t bytesRead;
 
-    while ((bytesRead = read(cl->sockfd, buffer, sizeof(buffer))) > 0) {
-        // Process or discard the received data as needed
-        // ...
-    }
     
     if (cl->sockfd != -1)
         close(cl->sockfd);
