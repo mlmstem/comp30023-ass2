@@ -123,7 +123,7 @@ This function will not usually return. It should only return if srv is NULL or y
         srv->cur_client = accept(srv->sockfd, (struct sockaddr*)&client_addr, &client_len);
         if (srv->cur_client< 0) {
             perror("Error accepting connection");
-            return;
+            continue;
         }
 
         /*rpc_data* response = malloc(sizeof(rpc_data));
@@ -140,15 +140,19 @@ This function will not usually return. It should only return if srv is NULL or y
             exit(EXIT_SUCCESS);
         }
 
+        pthread_detach(client_thread);
+
 
         //("the program continue to run \n");
         void* thread_result;
         pthread_join(client_thread, &thread_result);
 
         // Check if client has closed the connection
-        if (!thread_result) {
+        if (thread_result == PTHREAD_CANCELED) {
             //printf("running stops\n");
             break;
+        }else{
+            continue;
         }
 
         }
@@ -308,7 +312,7 @@ void* handle_client_request(void* ptr){
     }
 
     close(srv->cur_client);
-    pthread_exit(NULL);
+    //pthread_exit(NULL);
 }
 
 /*
