@@ -218,9 +218,12 @@ void* handle_client_request(void* ptr){
                 perror("Eorror reading the rpc_data");
                 exit(EXIT_FAILURE);
             }
+
             if (old == args->data1 && data2L == args->data2_len){
                 break;
             }
+            args->data1 =ntohl(args->data1);
+            args->data2_len = ntohl(args->data2_len);
             //printf("read first \n%d", args->data1);
             if(args->data2_len > 0){
                 args->data2 = (void*)malloc(args->data2_len);
@@ -581,6 +584,10 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
     // send the initial arguments to the server so the server can prints the arguments
 
     // data sent was incorrect -> needs further debugging
+
+
+    payload->data1 = (uint32_t)htonl(payload->data1);
+    payload->data2_len = (uint32_t)htonl(payload->data2_len);
     if(write(cl->sockfd, payload,sizeof(rpc_data)) < 0){
         perror("Eorror reading");
         exit(EXIT_FAILURE);
@@ -621,6 +628,8 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
     if (result->data1 == 666 && result->data2 == NULL){
         return NULL;
     }
+    result->data1 = ntohl(result->data1);
+    result->data2_len = ntohl(result->data2_len);
 
     if (result->data2_len > 0){
         result->data2 = malloc(result->data2_len);
