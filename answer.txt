@@ -1,15 +1,83 @@
 1. Should the server accept calls from everyone, or just a subset of users? 
 
+In this assignment, the server takes in every clients that is trying to establish connection to the server.
+however, the listening state, the server can hold maximum of 10 clients pending connecting to server
+and accept the most upfront client that is trying to establish connection only process the call of the one client.
+
+In real world, the system should definately run password check, and filter out suspious
+connection to ensure secruity of the system.
 
 
 
 2. Should authentication etc. be provided by the RPC framework, or by the functions that use the RPC framework? 
 
+the authentication of the data that could potentially disrupt the server from running 
+should be provide by the RPC framework to ensure server runs smoothly.
+or the client info that is unable to store in the system should be detected by the 
+framework.
+
+however, the data validity should that puts into a sepecific program, should be easier
+detects from the function side, becuase the framework cannot provide a comprehensive
+check for every possible function that is passing to, the data authentication should based
+on purpose of client usage, (what they want to do with this specific data) which boils down
+to the specific function that a client is calling.
+
+
+
 3. What transport layer protocol should be used? What are the trade-offs? 
+
+the transport layer protocol used in this program is tcp.
+
+it is connection based protocol, which client has to first establish an connection to run operation
+it allows the system process order at the same pace as the data
+that client sent in.
+so the order rpc find result will not mess up with rpc_call result.
+
+In comparison, UDP provides a connectionless protocal which handles the data faster
+but the process order might get lost.
+
+In real world, when processing a small amout of data online , it could use UDP to improve
+efficiency and avoid problems causing from connection.
+
+on the other hand, SCTP has provide efficient data transfer and the connection based
+communication.
+
+however SCTP has not been widely recognized, implementing program in such implementation will
+require much more efforts.
+
+
+
+
 
 4. In which function(s) should the socket(s) be created? 
 
+the server socket is created in rpc_serve_all function. when the server is actively 
+serving client's connection. this allows the server only stays active, when the command
+serve it sent through and could adjust the server status mannualy.
+
+the client socket is establish when they inititate connection to the port in rpc_init_client
+
+
+
+
+
+
 5. Should rpc_client and rpc_server be allocated dynamically or statically? What are the implications for the client and server code? 
+
+In this implementation the rpc_server is allocated statiacally denoted with its port number
+the client that the system is running the command of, is allocate dynamically and stores in the 
+srv->cur_client filed (the most upfont connector). the client thread is also handles dynamically
+allows mutiple client to run their command.
+
 
 
 6. What happens if one host uses big-endian byte order and the other uses little-endian? How does that relate to “network byte order”?
+
+
+the data unmatched error would occur, big-endian byte order refers to the sequence 
+of data operation and little endian refers to another sequence. when the two ends of 
+senders/receivers transfering data in different order, it will cause data (send/receive)unmatched
+and cause error.
+
+to address this issue, the network byte order is introduced, and protocals to convert the 
+data that sent through from one end to another end to same format(htonl, ntohs) ensure the portability of the data transfer.

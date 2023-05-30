@@ -13,20 +13,15 @@
 
 int create_listening_socket(char* service);
 void* handle_client_request(void* ptr);
-/**
-rpc_data* echo_2(rpc_data* x);
-rpc_data* sleep_h(rpc_data*x);
-rpc_data* add2_2(rpc_data*x);
-rpc_data* bad_null(rpc_data*x);
-rpc_data* bad_data2_2(rpc_data*x);
-rpc_data* bad_data2_1(rpc_data*x);
-rpc_data *add2_i8(rpc_data *);
-*/
+
+/*FUCNTION MAP STORES A FUNCTION NAME WITH IT CORRESPONDING FUNCTION POINTER*/
 
 typedef struct {
     char name[30];
     rpc_handler handler;
 } FunctionMap;
+
+// ALL THE REGISTERED FUNCTION IS STORED IN THE SERVER 
 
 struct rpc_server {
     /* Add variable(s) for server state */
@@ -64,10 +59,11 @@ on failure. If any of the arguments is NULL then -1 should be returned.*/
     if (srv == NULL || name == NULL || handler == NULL){
         return -1;
     }
-    
-    
+
 
    // record all the handlers in the servers 
+
+   //use dynamic memory allocation
 
    srv->map = (FunctionMap*)realloc(srv->map, (srv->number_handlers + 1) * sizeof(FunctionMap));
 
@@ -98,8 +94,6 @@ This function will not usually return. It should only return if srv is NULL or y
     /*Make sure the service name is passed in correctly so getaddressinfo not
     causing error*/
 
-    //fprintf(stdout, "rpc_serve_all: instance 0\n");
-
     char service[20];
     sprintf(service, "%d", srv->port);
 
@@ -126,20 +120,17 @@ This function will not usually return. It should only return if srv is NULL or y
             continue;
         }
 
-        /*rpc_data* response = malloc(sizeof(rpc_data));
-        memset(response, 0, sizeof(rpc_data));
-        if (read(client_sockfd, response, sizeof(rpc_data)) < 0) {
-            perror("Error reading from socket");
-            return;
-        }*/
         pthread_t client_thread;
 
+        /* This will be a client thread taking remote function call by receiving the request*/
         if (pthread_create(&client_thread, NULL, handle_client_request, (void*)srv) < 0){
             perror("error creating thread");
             close(srv->cur_client);
             exit(EXIT_SUCCESS);
+
         }
 
+        // detach the thread so server won't terminate because of client's disruption
         pthread_detach(client_thread);
 
 
@@ -152,6 +143,7 @@ This function will not usually return. It should only return if srv is NULL or y
             //printf("running stops\n");
             break;
         }else{
+            // continue to run if client runs till the end (while loop will continue)
             continue;
         }
 
@@ -182,9 +174,13 @@ void* handle_client_request(void* ptr){
         if (strlen(request) == 0){
             break;
         }
+        // taking the first request to check which procedure to run (find / call / close)
 
 
         if(strcmp(request, "rpc_find") == 0){
+
+            /* if the procedure is run write the registered Function Map array to the client
+            so (and number of handlers) so they can find the remote functions */
 
             if (write(srv->cur_client,&srv->number_handlers,sizeof(srv->number_handlers)) < 0){
                 perror("Error writing from socket");
@@ -209,6 +205,13 @@ void* handle_client_request(void* ptr){
             //printf("first occurence\n");
 
 
+            /*HANDLES IN 3 STEPS*/
+
+            /* Read the argment from client -> FIND THE HANDLERS AND RUN -> SEND THE
+            RESULT BACK TO CLIENT*/
+
+            // READ THE DATA
+
             rpc_data* args = malloc(sizeof(rpc_data));
             
             int old = args->data1;
@@ -222,6 +225,8 @@ void* handle_client_request(void* ptr){
             if (old == args->data1 && data2L == args->data2_len){
                 break;
             }
+
+            //READ FOR DATA2 IF IT IS AVALIABLE 
             args->data1 =ntohl(args->data1);
             args->data2_len = ntohl(args->data2_len);
             //printf("read first \n%d", args->data1);
@@ -239,16 +244,14 @@ void* handle_client_request(void* ptr){
                 exit(EXIT_FAILURE);
             }*/
 
+            // NAME OF THE FUNCTION NORMALLY SHORTER THAN 30 
             char name[30];
             if(read(srv->cur_client, name, sizeof(name)) < 0){
                 perror("Eorror reading from the name");
                 exit(EXIT_FAILURE);
         }
 
-
-
             // potential segmentation faults
-            // needs to malloc memory for data2 since its a void pointer
           
 
             /* retrive the handler and gets the result*/
@@ -269,10 +272,10 @@ void* handle_client_request(void* ptr){
             }
         }
 
-            // send the data over the socket (BAD ADDRESS ERROR ADDRESS NOT SENT)
+            // send the WRONG data RESULTS over the socket (BAD ADDRESS ERROR ADDRESS NOT SENT)
             
             if (result == NULL){
-                //design a speical data formate to represent NULL result
+                //design a speical data format to represent NULL result
                 rpc_data nullD = {.data1 = 666, .data2_len = 0, .data2 = NULL};
                 if(write(srv->cur_client, &nullD,sizeof(rpc_data)) < 0){
                     perror("Eorror sendinig null");
@@ -283,7 +286,7 @@ void* handle_client_request(void* ptr){
             }
 
             if ((result->data2_len == 0 && result->data2!= NULL) ||(result->data2_len != 0 && result->data2== NULL)){
-                //design a speical data formate to represent NULL result
+                //design a speical data format to represent NULL result
                 rpc_data nullD = {.data1 = 666, .data2_len = 0, .data2 = NULL};
                 if(write(srv->cur_client, &nullD,sizeof(rpc_data)) < 0){
                     perror("Eorror sendinig null");
@@ -293,6 +296,7 @@ void* handle_client_request(void* ptr){
 
             }
 
+            /* SEND THE RESULT OVER THE SOCKET*/
 
             if(write(srv->cur_client, result,sizeof(rpc_data)) < 0){
                 perror("Eorror sendinig rusult");
@@ -318,116 +322,6 @@ void* handle_client_request(void* ptr){
     //pthread_exit(NULL);
     return NULL;
 }
-
-/*
-rpc_data* echo_2(rpc_data* x){
-    
-
-    printf("calling echo2  data1 = %d and data2 sha256 = %p: \n", x->data1, (x->data2));
-    printf("call of echo2 received data1 = %d, call of echo2 received data1 = %p \n",x->data1, (x->data2));
-
-    const char* funcName = __func__;
-    x->data2 = (void*)funcName;
-
-    return x;
-}
-rpc_data* sleep_h(rpc_data*x){
-    printf("calling sleep, with argument %d\n", x->data1);
-    printf("call of sleep received result %d\n", x->data1);
-
-    const char* funcName = "sleep";
-    x->data2 = (void*)funcName;
-
-    return x;
-}
-*/
-
-/*
-rpc_data* add2_2(rpc_data* x){
-    
-    char n1 = x->data1;
-    char n2 = ((char *)x->data2)[0];
-    printf("calling add2_2, with arguments %d %d \n", n1, n2);
-    int res = n1 + n2;
-
-    //Prepare response 
-    rpc_data *out = malloc(sizeof(rpc_data));
-    assert(out != NULL);
-    out->data1 = res;
-    out->data2_len = 0;
-    const char* funcName = __func__;
-    out->data2 = (void*)funcName;
-    return out;
-}
-*/
-
-/*
-rpc_data* bad_null(rpc_data*x){
-
-    char n1 = x->data1;
-    char n2 = ((char *)x->data2)[0];
-
-    printf("calling bad_null, with arguments %d %d...", n1, n2);
-
-    printf("call of bad_null failed");
-    
-    return NULL;
-
-}
-rpc_data* bad_data2_1(rpc_data*x){
-
-
-    char n1 = x->data1;
-    char n2 = ((char *)x->data2)[0];
-
-    printf("calling bad_data2_1, with arguments %d %d...", n1, n2);
-
-    printf("call of bad_data2_1 failed");
-    
-    const char* funcName = __func__;
-    x->data2 = (void*)funcName;
-    return x;
-
-}
-rpc_data* bad_data2_2(rpc_data*x){
-
-    char n1 = x->data1;
-    char n2 = ((char *)x->data2)[0];
-
-    printf("calling bad_data2_2, with arguments %d %d...", n1, n2);
-
-    printf("call of bad_data2_2 failed");
-
-    const char* funcName = __func__;
-    x->data2 = (void*)funcName;
-    
-    return x;
-
-}
-rpc_data *add2_i8(rpc_data *in) {
-
-    if (in->data2 == NULL || in->data2_len != 1) {
-        return NULL;
-    }
-
-    char n1 = in->data1;
-    char n2 = ((char *)in->data2)[0];
-
-
-    printf("add2: arguments %d and %d\n", n1, n2);
-    int res = n1 + n2;
-
-    
-
-    rpc_data *out = malloc(sizeof(rpc_data));
-    assert(out != NULL);
-    out->data1 = res;
-    out->data2_len = 0;
-    const char* funcName = __func__;
-    out->data2 = (void*)funcName;
-    return out;
-}
-*/
 
 
 
@@ -475,6 +369,8 @@ success and NULL on failure.*/
         return NULL;
     }
 
+    // CONNECTS UNTIL THE CONNECTION IS ON
+
     struct addrinfo* rp;
     for(rp = new_cl->res; rp!= NULL; rp = rp->ai_next){
         new_cl->sockfd = socket(rp->ai_family,rp->ai_socktype,rp->ai_protocol);
@@ -494,10 +390,13 @@ If name is not registered, it should return NULL. If any of the arguments are NU
 the find operation fails, it returns NULL*/
 
 
-// change sizeof(request) to strlen(request) to ensure the string is properly sent
+// RETURN NULL IF CLIENT IS ALREADY CLOSED
+
     if (cl->closed){
         return NULL;
     }
+
+// SEND THE SERVER REQUEST
 
     char request[] ="rpc_find";
 // Invalid read of size 4
@@ -516,6 +415,8 @@ the find operation fails, it returns NULL*/
 
     // error happens from first read
 
+    // READ THE FUNCTIONMAP AND THE SIZE 
+
     if (read(cl->sockfd, &register_num,sizeof(register_num)) < 0){
         perror("Error reading");
         exit(EXIT_FAILURE);
@@ -526,6 +427,8 @@ the find operation fails, it returns NULL*/
         perror("Eorror reading");
         exit(EXIT_FAILURE);
     }
+
+    // ITERATES THROUGH THE FUNCTIONMAP TO FIND THE CORRECT REMOTE FUNCTION
 
     for (int i = 0; i < register_num; i++){
         if(strcmp(map_r[i].name, name) == 0){
@@ -553,6 +456,8 @@ field. The client will free these by rpc_data_free (defined below).*/
 
     /*same code implementation as rpc_find*/
 
+    // CHEKCS FOR INVALID DATA PASSED IN 
+
     if (payload->data1 == 0 && payload->data2 == NULL){
         return NULL;
     }
@@ -560,6 +465,8 @@ field. The client will free these by rpc_data_free (defined below).*/
         return NULL;
     }
 
+
+    // SEND THE REQUEST
 
     char request[] ="rpc_call";
 
@@ -584,10 +491,6 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
     // send the initial arguments to the server so the server can prints the arguments
 
     // data sent was incorrect -> needs further debugging
-
-
-    payload->data1 = (uint32_t)htonl(payload->data1);
-    payload->data2_len = (uint32_t)htonl(payload->data2_len);
     if(write(cl->sockfd, payload,sizeof(rpc_data)) < 0){
         perror("Eorror reading");
         exit(EXIT_FAILURE);
@@ -611,10 +514,16 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
 
     //printf("the sending string is :%s\n", h->name);
 
+
+    // SEND THE NAME OF THE FUNCTION TO CALL WHICH IS STORED IN HANDLES
+
     if(write(cl->sockfd, h->name,strlen(h->name)+1) < 0){
         perror("Eorror wrting name to the socket");
         exit(EXIT_FAILURE);
     }
+
+    // RECEIVING THE RESULT
+
     rpc_data* result = (rpc_data*)malloc(sizeof(rpc_data));
     
 
@@ -623,6 +532,7 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
         perror("Error reading from socket");
         exit(EXIT_FAILURE);
     }
+
     // go through null check firtst
 
     if (result->data1 == 666 && result->data2 == NULL){
@@ -638,9 +548,6 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
             exit(EXIT_FAILURE);
     }
     }   
-
-
-    // prints the result
 
 
 
@@ -685,6 +592,7 @@ void rpc_data_free(rpc_data *data) {
 
 
 /* COPIED FROM PRACTICAL server.c  used to create listening socket*/
+
 int create_listening_socket(char* service) {
 	int re, s, sockfd;
 	struct addrinfo hints, *res;
