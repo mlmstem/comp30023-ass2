@@ -313,6 +313,7 @@ void* handle_client_request(void* ptr){
 
     close(srv->cur_client);
     //pthread_exit(NULL);
+    return NULL;
 }
 
 /*
