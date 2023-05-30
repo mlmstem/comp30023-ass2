@@ -264,6 +264,29 @@ void* handle_client_request(void* ptr){
 
             // send the data over the socket (BAD ADDRESS ERROR ADDRESS NOT SENT)
             
+            if (result == NULL){
+                //design a speical data formate to represent NULL result
+                rpc_data nullD = {.data1 = 666, .data2_len = 0, .data2 = NULL};
+                if(write(srv->cur_client, &nullD,sizeof(rpc_data)) < 0){
+                    perror("Eorror sendinig null");
+                    exit(EXIT_FAILURE);
+                }
+                continue;
+
+            }
+
+            if ((result->data2_len == 0 && result->data2!= NULL) ||(result->data2_len != 0 && result->data2== NULL)){
+                //design a speical data formate to represent NULL result
+                rpc_data nullD = {.data1 = 666, .data2_len = 0, .data2 = NULL};
+                if(write(srv->cur_client, &nullD,sizeof(rpc_data)) < 0){
+                    perror("Eorror sendinig null");
+                    exit(EXIT_FAILURE);
+                }
+                continue;
+
+            }
+
+
             if(write(srv->cur_client, result,sizeof(rpc_data)) < 0){
                 perror("Eorror sendinig rusult");
                 exit(EXIT_FAILURE);
@@ -588,6 +611,12 @@ ONLY THE RESULT WILL BE SEND BACK TO THE CLIENT END*/
         perror("Error reading from socket");
         exit(EXIT_FAILURE);
     }
+    // go through null check firtst
+
+    if (result->data1 == 666 && result->data2 == NULL){
+        return NULL;
+    }
+
     if (result->data2_len > 0){
         result->data2 = malloc(result->data2_len);
         if (read(cl->sockfd, result->data2, result->data2_len) < 0) {
@@ -680,10 +709,3 @@ int create_listening_socket(char* service) {
 
 	return sockfd;
 }
-
-
-
-
-
-
-
